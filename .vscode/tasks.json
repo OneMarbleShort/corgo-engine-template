@@ -1,0 +1,74 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "CMake: build (Debug)",
+			"type": "shell",
+			"command": "cmake",
+			"args": [
+				"--build",
+				"--preset",
+				"build-vs2022-sim",
+				"--config",
+				"Debug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "CMake: build (Release)",
+			"type": "shell",
+			"command": "cmake",
+			"args": [
+				"--build",
+				"--preset",
+				"build-vs2022-sim",
+				"--config",
+				"Release"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Device: configure (Debug)",
+			"type": "shell",
+			"command": "powershell",
+			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "pd-debug"],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Device: build (Debug)",
+			"type": "shell",
+			"command": "powershell",
+			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "build-pd-debug", "-Build"],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Device: configure (Release)",
+			"type": "shell",
+			"command": "powershell",
+			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "pd-release"],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Device: build (Release)",
+			"type": "shell",
+			"command": "powershell",
+			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "build-pd-release", "-Build"],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

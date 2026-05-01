@@ -1,0 +1,118 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "vs2022-sim",
+      "displayName": "VS2022 Simulator",
+      "description": "Simulator configure using Visual Studio 2022 generator.",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build.vs2022",
+      "hidden": true
+    },
+    {
+      "name": "pd-debug",
+      "displayName": "Playdate Device Debug",
+      "description": "Playdate ARM debug configure using arm toolchain. Requires NMAKE_PATH env var (run 'Device: configure (Debug)' task once to set it).",
+      "generator": "NMake Makefiles",
+      "binaryDir": "${sourceDir}/build.pd",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_MAKE_PROGRAM": "$penv{NMAKE_PATH}",
+        "CMAKE_TOOLCHAIN_FILE": "c:/PlaydateSDK/C_API/buildsupport/arm.cmake"
+      },
+      "hidden": true
+    },
+    {
+      "name": "pd-release",
+      "displayName": "Playdate Device Release",
+      "description": "Playdate ARM release configure using arm toolchain. Requires NMAKE_PATH env var (run 'Device: configure (Debug)' task once to set it).",
+      "generator": "NMake Makefiles",
+      "binaryDir": "${sourceDir}/build.pd.release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_MAKE_PROGRAM": "$penv{NMAKE_PATH}",
+        "CMAKE_TOOLCHAIN_FILE": "c:/PlaydateSDK/C_API/buildsupport/arm.cmake"
+      },
+      "hidden": true
+    },
+
+
+    {
+      "name": "corgogame-vs2022-sim",
+      "displayName": "VS2022 Simulator (corgogame)",
+      "description": "Builds src/corgogame/ — the default template. To add your own game, duplicate this preset, change CE_GAME_NAME and binaryDir to match your src/<name>/ directory.",
+      "inherits": "vs2022-sim",
+      "binaryDir": "${sourceDir}/build.vs2022.corgogame",
+      "cacheVariables": {
+        "CE_GAME_NAME": "corgogame"
+      }
+    },
+    {
+      "name": "corgogame-pd-debug",
+      "displayName": "Playdate Device Debug (corgogame)",
+      "description": "Builds src/corgogame/ for Playdate device debug.",
+      "inherits": "pd-debug",
+      "binaryDir": "${sourceDir}/build.pd.corgogame",
+      "cacheVariables": {
+        "CE_GAME_NAME": "corgogame"
+      }
+    },
+    {
+      "name": "corgogame-pd-release",
+      "displayName": "Playdate Device Release (corgogame)",
+      "description": "Builds src/corgogame/ for Playdate device release.",
+      "inherits": "pd-release",
+      "binaryDir": "${sourceDir}/build.pd.release.corgogame",
+      "cacheVariables": {
+        "CE_GAME_NAME": "corgogame"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-vs2022-sim",
+      "displayName": "Build VS2022 Simulator",
+      "configurePreset": "vs2022-sim",
+      "configuration": "Debug"
+    },
+    {
+      "name": "build-pd-debug",
+      "displayName": "Build Playdate Device Debug",
+      "configurePreset": "pd-debug"
+    },
+    {
+      "name": "build-pd-release",
+      "displayName": "Build Playdate Device Release",
+      "configurePreset": "pd-release"
+    },
+
+
+    {
+      "name": "build-corgogame-vs2022-sim",
+      "displayName": "Build VS2022 Simulator (corgogame)",
+      "configurePreset": "corgogame-vs2022-sim",
+      "configuration": "Debug",
+      "targets": [ "ALL_BUILD" ]
+    },
+    {
+      "name": "build-corgogame-pd-debug",
+      "displayName": "Build Playdate Device Debug (corgogame)",
+      "configurePreset": "corgogame-pd-debug",
+      "targets": [ "all" ]
+    },
+    {
+      "name": "build-corgogame-pd-release",
+      "displayName": "Build Playdate Device Release (corgogame)",
+      "configurePreset": "corgogame-pd-release",
+      "targets": [ "all" ]
+    }
+  ],
+  "testPresets": [
+    
+  ]
+}

@@ -1,7 +1,6 @@
 //
 //  scenes/hellocorgo.c
 //  Hello Corgo!.
-//  Copyright (c) 2026 Carlos Camacho. All rights reserved.
 //
 
 #include "engine/corgo.h"

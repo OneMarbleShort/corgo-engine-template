@@ -1,7 +1,6 @@
 //
 //  game/scenes.h
 //  Main include for game demo scenes.
-//  Copyright (c) 2026 Carlos Camacho. All rights reserved.
 //
 
 #ifndef CORGO_GAME_SCENES_H

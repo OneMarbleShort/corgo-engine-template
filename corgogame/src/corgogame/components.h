@@ -1,7 +1,6 @@
 //
 //  game/components.h
 //  List of game ECS components
-//  Copyright (c) 2025 Carlos Camacho. All rights reserved.
 //
 
 #ifndef CORGO_GAME_COMPONENTS_H

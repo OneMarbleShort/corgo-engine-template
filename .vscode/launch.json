@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Build and Run Simulator",
+            "name": "Build and Run Simulator (corgogame)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",

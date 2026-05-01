@@ -57,3 +57,4 @@ dkms.conf
 crashlog.txt
 */build.*
 */*.pdx
+/corgo-engine

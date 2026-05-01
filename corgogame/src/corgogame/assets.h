@@ -1,7 +1,6 @@
 //
 //  game/assets.h
 //  Custom asset loaders for the game.
-//  Copyright (c) 2025 Carlos Camacho. All rights reserved.
 //
 
 #ifndef CORGO_GAME_ASSETS_H

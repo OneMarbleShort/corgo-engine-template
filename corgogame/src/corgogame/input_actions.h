@@ -1,7 +1,6 @@
 //
 //  game/input_actions.h
 //  Main include for game input actions.
-//  Copyright (c) 2026 Carlos Camacho. All rights reserved.
 //
 
 #ifndef CORGO_GAME_INPUT_ACTIONS_H

@@ -23,7 +23,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_MAKE_PROGRAM": "$penv{NMAKE_PATH}",
-        "CMAKE_TOOLCHAIN_FILE": "${env:PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "$penv{PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
       },
       "hidden": true
     },
@@ -36,7 +36,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_MAKE_PROGRAM": "$penv{NMAKE_PATH}",
-        "CMAKE_TOOLCHAIN_FILE": "${env:PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "$penv{PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
       },
       "hidden": true
     },
@@ -50,6 +50,16 @@
       "binaryDir": "${sourceDir}/build.vs2022.corgogame",
       "cacheVariables": {
         "CE_GAME_NAME": "corgogame"
+      }
+    },
+    {
+      "name": "corgogame-vs2022-sim-hellocorgo",
+      "displayName": "VS2022 Simulator (corgogame: HelloCorgo)",
+      "description": "Builds src/corgogame/ with HelloCorgo as the start scene.",
+      "inherits": "corgogame-vs2022-sim",
+      "binaryDir": "${sourceDir}/build.vs2022.corgogame",
+      "cacheVariables": {
+        "CE_ENGINE_START_SCENE": "HelloCorgo"
       }
     },
     {
@@ -90,7 +100,12 @@
       "displayName": "Build Playdate Device Release",
       "configurePreset": "pd-release"
     },
-
+    {
+      "name": "build-corgogame-vs2022-sim-hellocorgo",
+      "displayName": "Build VS2022 Simulator (corgogame: HelloCorgo)",
+      "configurePreset": "corgogame-vs2022-sim-hellocorgo",
+      "configuration": "Debug"
+    },
 
     {
       "name": "build-corgogame-vs2022-sim",

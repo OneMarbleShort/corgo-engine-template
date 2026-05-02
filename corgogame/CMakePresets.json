@@ -23,7 +23,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_MAKE_PROGRAM": "$penv{NMAKE_PATH}",
-        "CMAKE_TOOLCHAIN_FILE": "c:/PlaydateSDK/C_API/buildsupport/arm.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "${env:PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
       },
       "hidden": true
     },
@@ -36,7 +36,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_MAKE_PROGRAM": "$penv{NMAKE_PATH}",
-        "CMAKE_TOOLCHAIN_FILE": "c:/PlaydateSDK/C_API/buildsupport/arm.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "${env:PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
       },
       "hidden": true
     },

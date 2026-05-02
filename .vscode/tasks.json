@@ -35,15 +35,6 @@
 			"group": "build"
 		},
 		{
-			"label": "Device: configure (Debug)",
-			"type": "shell",
-			"command": "powershell",
-			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "pd-debug"],
-			"isBackground": false,
-			"problemMatcher": [],
-			"group": "build"
-		},
-		{
 			"label": "Device: build (Debug)",
 			"type": "shell",
 			"command": "powershell",
@@ -53,19 +44,19 @@
 			"group": "build"
 		},
 		{
-			"label": "Device: configure (Release)",
+			"label": "Device: build (Release)",
 			"type": "shell",
 			"command": "powershell",
-			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "pd-release"],
+			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "build-pd-release", "-Build"],
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
 		},
 		{
-			"label": "Device: build (Release)",
+			"label": "Set Up Env Variables",
 			"type": "shell",
 			"command": "powershell",
-			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "build-pd-release", "-Build"],
+			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/corgo-engine/scripts/set-up-env-vars.ps1"],
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"

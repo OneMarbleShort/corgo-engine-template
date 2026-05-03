@@ -26,5 +26,5 @@
         "cmake": true,
         "Test-Path": true
     },
-    "cmake.sourceDirectory": "D:/git/corgo-engine-template/corgogame"
+    "cmake.sourceDirectory": "${workspaceFolder}/corgogame"
 }

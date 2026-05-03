@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"pd_api.h": "c",
+			"stdbool.h": "c",
+			"system_error": "c",
+			"xlocale": "c",
+			"components.h": "c",
+			"ecs.h": "c"
+		},
+		"elfinsight.armBinariesPath": "C:\\Program Files (x86)\\Arm GNU Toolchain arm-none-eabi\\12.2 mpacbti-rel1\\bin",
+		"chat.tools.terminal.autoApprove": {
+			"cmake": true,
+			"Test-Path": true
+		}
+	}
+}

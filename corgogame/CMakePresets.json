@@ -63,6 +63,16 @@
       }
     },
     {
+      "name": "corgogame-vs2022-sim-hellocorgoS2",
+      "displayName": "VS2022 Simulator (corgogame: HelloCorgoS2)",
+      "description": "Builds src/corgogame/ with HelloCorgoS2 as the start scene.",
+      "inherits": "corgogame-vs2022-sim",
+      "binaryDir": "${sourceDir}/build.vs2022.corgogame",
+      "cacheVariables": {
+        "CE_ENGINE_START_SCENE": "HelloCorgoS2"
+      }
+    },
+    {
       "name": "corgogame-pd-debug",
       "displayName": "Playdate Device Debug (corgogame)",
       "description": "Builds src/corgogame/ for Playdate device debug.",
@@ -80,6 +90,16 @@
       "binaryDir": "${sourceDir}/build.pd.release.corgogame",
       "cacheVariables": {
         "CE_GAME_NAME": "corgogame"
+      }
+    },
+    {
+      "name": "corgogame2-vs2022-sim",
+      "displayName": "VS2022 Simulator (corgogame2)",
+      "description": "Builds src/corgogame2/ — the default template. To add your own game, duplicate this preset, change CE_GAME_NAME and binaryDir to match your src/<name>/ directory.",
+      "inherits": "vs2022-sim",
+      "binaryDir": "${sourceDir}/build.vs2022.corgogame2",
+      "cacheVariables": {
+        "CE_GAME_NAME": "corgogame2"
       }
     }
   ],
@@ -106,7 +126,12 @@
       "configurePreset": "corgogame-vs2022-sim-hellocorgo",
       "configuration": "Debug"
     },
-
+    {
+      "name": "build-corgogame-vs2022-sim-hellocorgoS2",
+      "displayName": "Build VS2022 Simulator (corgogame: HelloCorgoS2)",
+      "configurePreset": "corgogame-vs2022-sim-hellocorgoS2",
+      "configuration": "Debug"
+    },
     {
       "name": "build-corgogame-vs2022-sim",
       "displayName": "Build VS2022 Simulator (corgogame)",
@@ -125,6 +150,13 @@
       "displayName": "Build Playdate Device Release (corgogame)",
       "configurePreset": "corgogame-pd-release",
       "targets": [ "all" ]
+    },
+    {
+      "name": "build-corgogame2-vs2022-sim",
+      "displayName": "Build VS2022 Simulator (corgogame2)",
+      "configurePreset": "corgogame2-vs2022-sim",
+      "configuration": "Debug",
+      "targets": [ "ALL_BUILD" ]
     }
   ],
   "testPresets": [

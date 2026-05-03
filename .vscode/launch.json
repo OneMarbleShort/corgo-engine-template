@@ -25,6 +25,31 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": []
+        },
+        {
+            "name": "Build and Run Simulator (corgogame2)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
+            "args": [
+                "${workspaceFolder}/corgogame/corgogame2.pdx"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "CMake: build"
+        },
+        {
+            "name": "Run Simulator Without Building (corgogame2)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
+            "args": [
+                "${workspaceFolder}/corgogame/corgogame2.pdx"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": []
         }
     ]
 }

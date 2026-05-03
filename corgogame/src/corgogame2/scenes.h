@@ -21,11 +21,8 @@
 
 // Sample Hello World Scene
 CE_DECLARE_SCENE(HelloCorgo)
-CE_DECLARE_SCENE(HelloCorgoS2)
 
-// Set this to the scene you want to load first, using a ifndef to allow overriding via CMake
-#ifndef CE_ENGINE_SET_START_SCENE
+// Set this to the scene you want to load first
 #define CE_ENGINE_SET_START_SCENE HelloCorgo
-#endif 
 
 #endif // CORGO_GAME_SCENES_H

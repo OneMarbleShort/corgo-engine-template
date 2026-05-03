@@ -11,7 +11,7 @@ static CE_TransformComponent* transformComponent = NULL;
 static int xSpeed = 1;
 static int ySpeed = 1;
 
-CE_DECLARE_SCENE_CREATE_FUNCTION(HelloCorgo)
+CE_DECLARE_SCENE_CREATE_FUNCTION(HelloCorgoS2)
 {
     CES_CREATE_ENTITY(parent);
     CES_ADD_COMPONENT_EPTR(parent, CE_TRANSFORM_COMPONENT, transformComponent);
@@ -19,7 +19,7 @@ CE_DECLARE_SCENE_CREATE_FUNCTION(HelloCorgo)
     
     // Set text and font
     CES_CHECK_RESULT(
-        CE_TextLabelComponent_setStaticText(context, textLabelComponent, transformComponent, "Hello, Corgo Engine!"), 
+        CE_TextLabelComponent_setStaticText(context, textLabelComponent, transformComponent, "Hello, Corgo Engine Second Scene!"), 
         "Failed to set text for TextLabelComponent");
 
     CES_CHECK_RESULT(
@@ -36,7 +36,7 @@ CE_DECLARE_SCENE_CREATE_FUNCTION(HelloCorgo)
     return CE_OK;
 }
 
-CE_DECLARE_SCENE_RUN_FUNCTION(HelloCorgo)
+CE_DECLARE_SCENE_RUN_FUNCTION(HelloCorgoS2)
 {
     
     const uint16_t x = transformComponent->m_x + xSpeed;
@@ -55,4 +55,4 @@ CE_DECLARE_SCENE_RUN_FUNCTION(HelloCorgo)
     return CE_OK;
 }
 
-CE_GENERATE_SCENE(HelloCorgo, CE_INVALID_TYPE_ID)
+CE_GENERATE_SCENE(HelloCorgoS2, CE_INVALID_TYPE_ID)

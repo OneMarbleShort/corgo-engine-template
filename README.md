@@ -8,20 +8,20 @@ None of the files have Copyright headers, feel free to add your own.
 This only applies to the source files in this repo. The Engine itself is BSD licensed which requires attribution. However this is only necessary if you are changing
 the engine code. Your game remain yours.
 
-Although not necessary, I will always appreciate a mention like "Made with Corgo Engine" somwehere in your game!
+Although not necessary, I will always appreciate a mention like "Made with Corgo Engine" somewhere in your game!
 
 ## Requirements
 
 - [Playdate SDK](https://play.date/dev/)
--- set `PLAYDATE_SDK_PATH` environment variable to the install path
+- - set `PLAYDATE_SDK_PATH` environment variable to the install path
 - [Visual Studio 2022 or 2026 (Version 17.9 or newer)](https://visualstudio.microsoft.com/) with C/C++ development tools. 
--- If using 2026: install VS2022 build tools (https://visualstudio.microsoft.com/vs/older-downloads/)
+- - If using 2026: install VS2022 build tools (https://visualstudio.microsoft.com/vs/older-downloads/)
 - [ARM GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) (arm-none-eabi-gcc 12.2) for device builds
 - [CMake](https://cmake.org/) 3.14 or higher
 - [VSCode](https://code.visualstudio.com/download) Recommended IDE. Install the following Plugins:
--- C/C++ support and DevTools: basic language support
--- CMake Tools: run builds and tests from the IDE
--- ELFInsights: debug the generated ELF images
+- - C/C++ support and DevTools: basic language support
+- - CMake Tools: run builds and tests from the IDE
+- - ELFInsights: debug the generated ELF images
 
 ## Setup
 

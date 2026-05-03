@@ -37,7 +37,7 @@ The recommendation is to download the files and add them to a fresh repository. 
 VSCode is the recommended IDE, although Visual Studio can be used I have not fully tested all the CMake preset functionality and some things may be a little wonky.
 VSCode has a C/C++ debugger and can attach to the simulator, as well as run all tests, builds and launchers directly from within the IDE.
 
-1. Install recommendede plugins
+1. Install recommended plugins
 2. Open the top level folder as a project
 
 If you have CmMake tools installed, it should pick up the Presets and show an icon on the left bar. If you cannot see it check .vscode/settings.json and update `cmake.sourceDirectory`.
@@ -45,6 +45,7 @@ If you have CmMake tools installed, it should pick up the Presets and show an ic
 ### Device builds
 
 In order to build for the PD device you need a new environment variable: `NMAKE_PATH` pointing to MSbuild nmake.exe
+
 A script is provided: `scripts/set-up-eenv-vars.ps1` that will set the variable by using vswhere to find the correct path.
 
 This only needs to be run once (or if the build tools change)
@@ -59,9 +60,9 @@ Corgo Engine can be built in different ways depending on your needs. This is les
 
 There are 3 ways of building games:
 1. Multiple projects: A 'project' refers to a self contained game that has its own code and assets. Only the engine code is shared. This is recommended if you want to
-have multiple games in the same repo but independent of each other. The template has a single project named 'corgogame'. Each project will generate its own .pdx file in a separate location and using its own pdxinfo.
-2. Multiple games: A project can have multiple games inside, all of the games share the same assets but have independent C code. This includes separate components, systems and scenes. This is useful to build multiple prototypes or to have a central asset library. Every game in a project ships with ALL assets, so be careful when packaging your game. The template has 2 games: 'corgogame' and 'corgogame2'. Each game will generate its own .pdx file but will reuse the same pdxinfo file.
-3. Multiple scenes: A game can have multiple scenes, technically these are not independent games, but a scene can be seen as an 'entry point' so you could potentially have separate prototypes implemented as separate scenes. All scenes in a game share all assets and code (components and systems). A single pdx is built per game and the starting scene will be the last one enabled when that pdx was built.
+have multiple games in the same repo but independent of each other. The template has a single project named 'corgogame'. Each project will generate its own .pdx file in a separate location and will use its own pdxinfo.
+2. Multiple games in a project: A project can have multiple games inside, all of the games share the same assets but have independent C code. This includes separate components, systems and scenes. This is useful for build multiple prototypes or to have a central asset library. Every game in a project ships with ALL assets, so be careful when packaging your game. The template has 2 games: 'corgogame' and 'corgogame2'. Each game will generate its own .pdx file but will reuse the same pdxinfo file.
+3. Multiple scenes: A game can have multiple scenes, technically these are not independent games, but a scene can be seen as an 'entry point' so you could potentially have separate prototypes implemented as separate scenes. All scenes in a game share all assets and code (components and systems). A single .pdx is built per game and the starting scene will be the last one enabled when that .pdx was built.
 
 Projects are separate CMake targets so you need to point VSCode or the CLI to the correct CMakeLists.txt file in order to switch projects. Games and Scenes are controlled via CMake parameters and can be switched by using presets. More on this later.
 

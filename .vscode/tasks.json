@@ -35,24 +35,6 @@
 			"group": "build"
 		},
 		{
-			"label": "Device: build (Debug)",
-			"type": "shell",
-			"command": "powershell",
-			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "build-pd-debug", "-Build"],
-			"isBackground": false,
-			"problemMatcher": [],
-			"group": "build"
-		},
-		{
-			"label": "Device: build (Release)",
-			"type": "shell",
-			"command": "powershell",
-			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/device-cmake.ps1", "-Preset", "build-pd-release", "-Build"],
-			"isBackground": false,
-			"problemMatcher": [],
-			"group": "build"
-		},
-		{
 			"label": "Set Up Env Variables",
 			"type": "shell",
 			"command": "powershell",

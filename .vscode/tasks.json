@@ -38,10 +38,22 @@
 			"label": "Set Up Env Variables",
 			"type": "shell",
 			"command": "powershell",
-			"args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/corgo-engine/scripts/set-up-env-vars.ps1"],
+			"args": [
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/corgo-engine/scripts/set-up-env-vars.ps1"
+			],
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"type": "cmake",
+			"label": "CMake: configure",
+			"command": "configure",
+			"problemMatcher": [],
+			"detail": "CMake template configure task"
 		}
 	]
 }

@@ -58,3 +58,35 @@ crashlog.txt
 */build.*
 */*.pdx
 /corgo-engine
+/tools/bin/project-manager/
+/tools/project-manager/build/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+
+# Python packaging/build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Python coverage artifacts
+.coverage
+.coverage.*
+htmlcov/

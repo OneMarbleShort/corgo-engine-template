@@ -273,7 +273,13 @@ def test_clone_project_copies_workspace_with_new_name(tmp_path: Path) -> None:
 
     _cloneRoot = _destination / "clone-alpha"
     _cloneReadme = (_cloneRoot / "README.md").read_text(encoding="utf-8")
+    _cloneConfig = json.loads((_cloneRoot / "tools" / "project-manager" / "project_manager_config.json").read_text(encoding="utf-8"))
+    _cloneWorkspaceText = (_cloneRoot / "clone-alpha.code-workspace").read_text(encoding="utf-8")
     assert "Cloned project" in _result
     assert _cloneRoot.exists()
     assert "clone-alpha" in _cloneReadme
+    assert "corgo-engine-template" not in _cloneReadme
+    assert _cloneConfig["projectFolder"] == "corgogame"
+    assert "clone-alpha" in _cloneWorkspaceText
+    assert "corgo-engine-template" not in _cloneWorkspaceText
     assert (_cloneRoot / "clone-alpha.code-workspace").exists()

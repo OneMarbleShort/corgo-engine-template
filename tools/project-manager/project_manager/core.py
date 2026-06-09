@@ -733,8 +733,12 @@ class ProjectManagerService:
         shutil.copytree(self._workspaceRoot, _targetPath, ignore=_ignorePatterns)
 
         _oldProjectName = self._workspaceRoot.name
-        _cloneService = ProjectManagerService(_targetPath, _targetPath / "tools" / "project-manager" / "project_manager_config.json")
+        _cloneConfigPath = _targetPath / "tools" / "project-manager" / "project_manager_config.json"
+        _cloneService = ProjectManagerService(_targetPath, _cloneConfigPath)
         _cloneService._ReplaceProjectNameInWorkspace(_oldProjectName, newProjectName)
+
+        _cloneService._config["projectFolder"] = _cloneService._paths.projectRoot.name
+        _cloneService._SaveConfig(_cloneService._config)
 
         _workspaceFile = _targetPath / f"{_oldProjectName}.code-workspace"
         if _workspaceFile.exists():

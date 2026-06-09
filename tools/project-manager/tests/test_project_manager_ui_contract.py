@@ -28,6 +28,8 @@ def _GetRequiredLayoutActionMethods() -> set[str]:
         "_RenameProjectInline",
         "_CopyProject",
         "_DeleteProject",
+        "_OnCloneWorkspace",
+        "_CloneWorkspace",
         "_CreateEmptyProject",
         "_CreateEmptyGame",
         "_CopyGame",
@@ -61,3 +63,21 @@ def test_item_row_does_not_define_layout_action_handlers() -> None:
     assert not _wronglyPlacedMethods, (
         f"ItemRow should not define layout action methods: {_wronglyPlacedMethods}"
     )
+
+
+def test_clone_workspace_prompt_uses_folder_picker() -> None:
+    _moduleAst = _GetAppModuleAst()
+    _layoutNode = _GetClassNode(_moduleAst, "ProjectManagerLayout")
+    _pickMethod = next(
+        (_item for _item in _layoutNode.body if isinstance(_item, ast.FunctionDef) and _item.name == "_PickCloneDestinationFolder"),
+        None,
+    )
+
+    assert _pickMethod is not None, "ProjectManagerLayout must define _PickCloneDestinationFolder."
+
+    _callNames = {
+        _node.func.attr
+        for _node in ast.walk(_pickMethod)
+        if isinstance(_node, ast.Call) and isinstance(_node.func, ast.Attribute)
+    }
+    assert "askdirectory" in _callNames, "Clone workspace folder picker must call askdirectory()."

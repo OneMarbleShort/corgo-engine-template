@@ -11,10 +11,12 @@ This file is used to provide a list of guidelines that should be followed for al
 - the tool should auto install dependencies that aren't installed
 - each tool should have it's own folder under tools
 - each tool should build it's exe into tools/bin
+- For PyInstaller builds that requirement means the final `.exe` itself must be emitted directly into `tools/bin`; avoid `COLLECT`/one-folder layouts that create `tools/bin/<tool-name>/...` unless the script moves and validates the final executable path explicitly.
 - when it makes sense store out configurable values into a tool specific json file.
 - For Python GUI tools, build scripts should select a supported interpreter version explicitly (for this repo: Python 3.11/3.12/3.13 for Kivy) instead of relying on whatever `python` resolves to.
 - Build scripts should fail on non-zero external command exit codes (pip/pyinstaller/etc), not just on PowerShell runtime errors.
 - Keep a maintained `.spec` file checked into the tool folder and build from it, instead of regenerating the spec every run.
+- Always build and test your code changes
 
 # Standards
 - Each feature should have a unit test to validate behavior

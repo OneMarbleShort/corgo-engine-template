@@ -186,6 +186,16 @@ class ProjectManagerLayout(BoxLayout):
         _addButton.bind(on_press=lambda _instance: onAdd())
         _buttonsRow.add_widget(_addButton)
 
+        if screenName == "projects":
+            _cloneRepoButton = Button(
+                text="Clone Repo",
+                background_normal="",
+                background_color=(0.21, 0.5, 0.82, 1),
+                color=(1, 1, 1, 1),
+            )
+            _cloneRepoButton.bind(on_press=lambda _instance: self._OnCloneWorkspace())
+            _buttonsRow.add_widget(_cloneRepoButton)
+
         if screenName != "projects":
             _backButton = Button(
                 text="Back",
@@ -241,6 +251,79 @@ class ProjectManagerLayout(BoxLayout):
         _okButton.bind(on_press=lambda _instance: _Submit())
         _cancelButton.bind(on_press=lambda _instance: _popup.dismiss())
         _popup.open()
+
+    def _PromptForCloneWorkspace(self) -> None:
+        _content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
+        _destinationRow = BoxLayout(size_hint_y=None, height=dp(36), spacing=dp(8))
+        _destinationInput = TextInput(
+            multiline=False,
+            text=str(self._workspaceRoot.parent),
+            hint_text="destination folder",
+            readonly=True,
+        )
+        _browseButton = Button(
+            text="Browse...",
+            size_hint_x=0.32,
+            background_normal="",
+            background_color=(0.21, 0.5, 0.82, 1),
+            color=(1, 1, 1, 1),
+        )
+        _browseButton.bind(on_press=lambda _instance: self._PickCloneDestinationFolder(_destinationInput))
+        _destinationRow.add_widget(_destinationInput)
+        _destinationRow.add_widget(_browseButton)
+
+        _nameInput = TextInput(multiline=False, hint_text="new repo name")
+        _content.add_widget(_destinationRow)
+        _content.add_widget(_nameInput)
+
+        _buttons = BoxLayout(size_hint_y=None, height=dp(34), spacing=dp(8))
+        _okButton = Button(text="OK", background_normal="", background_color=(0.17, 0.58, 0.3, 1))
+        _cancelButton = Button(text="Cancel", background_normal="", background_color=(0.35, 0.35, 0.35, 1))
+        _buttons.add_widget(_okButton)
+        _buttons.add_widget(_cancelButton)
+        _content.add_widget(_buttons)
+
+        _popup = Popup(title="Clone Repo", content=_content, size_hint=(0.72, 0.4), auto_dismiss=False)
+
+        def _Submit() -> None:
+            _destinationFolder = _destinationInput.text.strip()
+            _newName = _nameInput.text.strip()
+            if not _destinationFolder or not _newName:
+                self._SetStatus("Please enter both destination folder and new repo name.")
+                return
+            try:
+                self._CloneWorkspace(_destinationFolder, _newName)
+                _popup.dismiss()
+            except Exception as _error:
+                self._SetStatus(str(_error))
+
+        _okButton.bind(on_press=lambda _instance: _Submit())
+        _cancelButton.bind(on_press=lambda _instance: _popup.dismiss())
+        _popup.open()
+
+    def _PickCloneDestinationFolder(self, destinationInput: TextInput) -> None:
+        try:
+            import tkinter as _tk
+            from tkinter import filedialog as _filedialog
+        except Exception as _error:
+            raise ProjectManagerError(
+                f"Folder picker is unavailable. How to fix: ensure tkinter is available in this Python install. Error: {_error}"
+            ) from _error
+
+        _root = _tk.Tk()
+        _root.withdraw()
+        _root.attributes("-topmost", True)
+        try:
+            _selectedFolder = _filedialog.askdirectory(
+                initialdir=destinationInput.text or str(self._workspaceRoot.parent),
+                title="Select clone destination folder",
+                mustexist=True,
+            )
+        finally:
+            _root.destroy()
+
+        if _selectedFolder:
+            destinationInput.text = _selectedFolder
 
     def _Confirm(self, titleText: str, bodyText: str, onConfirm: Callable[[], None]) -> None:
         _content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
@@ -413,6 +496,14 @@ class ProjectManagerLayout(BoxLayout):
 
     def _OnAddProject(self) -> None:
         self._PromptForName("Add Project", self._CreateEmptyProject, hintText="project name")
+
+    def _OnCloneWorkspace(self) -> None:
+        self._PromptForCloneWorkspace()
+
+    def _CloneWorkspace(self, destinationFolderText: str, newProjectName: str) -> None:
+        _destinationFolder = Path(destinationFolderText).expanduser()
+        _result = self._bootstrapService.CloneProject(_destinationFolder, newProjectName)
+        self._SetStatus(_result)
 
     def _CreateEmptyProject(self, projectName: str) -> None:
         _projectPath = self._workspaceRoot / projectName

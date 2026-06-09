@@ -8,6 +8,7 @@ $toolRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $workspaceRoot = Split-Path -Parent (Split-Path -Parent $toolRoot)
 $outputRoot = Join-Path $workspaceRoot "tools/bin"
 $outputName = "project-manager"
+$outputExePath = Join-Path $outputRoot "$outputName.exe"
 
 function Invoke-ExternalCommand {
     param(
@@ -69,6 +70,10 @@ Write-Host "Installing packaging dependencies..."
 Invoke-ExternalCommand -Executable $pythonExe -ArgumentList @($pythonPrefixArgs + @("-m", "pip", "install", "-r", (Join-Path $toolRoot "requirements.txt"))) -StepName "Dependency installation"
 
 Write-Host "Building executable..."
+if (Test-Path (Join-Path $outputRoot $outputName)) {
+    Remove-Item (Join-Path $outputRoot $outputName) -Recurse -Force
+}
+
 Invoke-ExternalCommand -Executable $pythonExe -ArgumentList @(
     $pythonPrefixArgs + @(
         "-m",
@@ -83,4 +88,22 @@ Invoke-ExternalCommand -Executable $pythonExe -ArgumentList @(
     )
 ) -StepName "PyInstaller build"
 
-Write-Host "Build complete: $(Join-Path $outputRoot $outputName)"
+if (-not (Test-Path $outputExePath)) {
+    throw "Build output not found at $outputExePath"
+}
+
+Write-Host "Smoke testing executable..."
+$process = Start-Process -FilePath $outputExePath -PassThru
+try {
+    if ($process.HasExited) {
+        throw "Smoke test failed: process exited immediately with code $($process.ExitCode)"
+    }
+}
+finally {
+    if (-not $process.HasExited) {
+        Stop-Process -Id $process.Id -Force
+        $process.WaitForExit()
+    }
+}
+
+Write-Host "Build complete: $outputExePath"

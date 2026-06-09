@@ -4,6 +4,7 @@ This tool is to allow quick modification to a corgo-engine project without havin
 # Features
 - Rename Project - Example this project is called corgo-engine-template, a user should be able to rename it and all files that reference that name to something else.
 - Should be able to clone a project into another folder as a new project (with a different name)
+- Should be able to clone the entire repo/workspace to another directory, using a folder picker for destination selection plus a new repo name, rename the cloned folder, rename the `.code-workspace` file, and update file contents that still reference the old repo folder name.
 - Should be able to add a new game (using another as a template)
 - Should be able to clone a game
 - Should be able to rename a game

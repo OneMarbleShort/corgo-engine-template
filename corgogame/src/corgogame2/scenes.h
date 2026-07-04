@@ -17,7 +17,7 @@
  */
 
 
-// #define CE_ENGINE_SET_START_SCENE MyScene
+// #define CE_ENGINE_SET_START_SCENE HelloCorgo
 
 // Sample Hello World Scene
 CE_DECLARE_SCENE(HelloCorgo)

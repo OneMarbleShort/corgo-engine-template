@@ -31,7 +31,16 @@ def EnsureDependencyInstalled(packageName: str) -> None:
 
 
 def _LooksLikeWorkspaceRoot(candidatePath: Path) -> bool:
-    return (candidatePath / "corgogame" / "src").exists()
+    if not (candidatePath / "tools" / "project-manager").exists():
+        return False
+
+    for _childPath in candidatePath.iterdir():
+        if not _childPath.is_dir():
+            continue
+        if (_childPath / "src").exists() and (_childPath / "CMakePresets.json").exists():
+            return True
+
+    return False
 
 
 def _FindWorkspaceRoot() -> Path:

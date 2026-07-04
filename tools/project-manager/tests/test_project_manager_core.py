@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from project_manager.main import _LooksLikeWorkspaceRoot
 from project_manager.core import ProjectManagerService
 
 
@@ -261,6 +262,26 @@ def test_rename_project_updates_references_without_folder_move(tmp_path: Path) -
     assert "Workspace folder rename was skipped" in _result
     assert "my-renamed-template" in _readmeText
     assert (_workspaceRoot / "my-renamed-template.code-workspace").exists()
+
+
+def test_rename_project_folder_updates_workspace_paths(tmp_path: Path) -> None:
+    _workspaceRoot = _CreateFixtureWorkspace(tmp_path)
+    _service = _CreateService(_workspaceRoot)
+
+    _result = _service.RenameProjectFolder("corgogame", "renamedproject")
+
+    _settings = json.loads((_workspaceRoot / ".vscode" / "settings.json").read_text(encoding="utf-8"))
+    _launch = json.loads((_workspaceRoot / ".vscode" / "launch.json").read_text(encoding="utf-8"))
+    _config = json.loads(
+        (_workspaceRoot / "tools" / "project-manager" / "project_manager_config.json").read_text(encoding="utf-8")
+    )
+    assert "Renamed project corgogame" in _result
+    assert (_workspaceRoot / "renamedproject").exists()
+    assert not (_workspaceRoot / "corgogame").exists()
+    assert _settings["cmake.sourceDirectory"] == "${workspaceFolder}/renamedproject/"
+    assert _launch["configurations"][0]["args"][0] == "${workspaceFolder}/renamedproject/corgogame.pdx"
+    assert _config["projectFolder"] == "renamedproject"
+    assert _LooksLikeWorkspaceRoot(_workspaceRoot)
 
 
 def test_clone_project_copies_workspace_with_new_name(tmp_path: Path) -> None:

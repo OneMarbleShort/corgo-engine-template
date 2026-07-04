@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
@@ -43,12 +44,16 @@ class InlineRenameInput(TextInput):
         self.bind(on_text_validate=self._OnTextValidate)
 
     def on_touch_down(self, touch):
+        _handled = super().on_touch_down(touch)
         if self.collide_point(*touch.pos) and getattr(touch, "is_double_tap", False):
-            self.readonly = False
-            self.focus = True
-            self.select_all()
+            Clock.schedule_once(self._BeginRename, 0)
             return True
-        return super().on_touch_down(touch)
+        return _handled
+
+    def _BeginRename(self, _dt: float) -> None:
+        self.readonly = False
+        self.focus = True
+        self.select_all()
 
     def _OnTextValidate(self, _instance):
         self._CommitRename()
@@ -213,12 +218,18 @@ class ProjectManagerLayout(BoxLayout):
 
     def _GoBack(self, currentScreen: str) -> None:
         if currentScreen == "scenes":
-            self._screenManager.current = "games"
+            self._SwitchScreen("games", isForward=False)
             self._UpdateTitleForGames()
             return
 
-        self._screenManager.current = "projects"
+        self._SwitchScreen("projects", isForward=False)
         self._titleLabel.text = "CorgoEngine"
+
+    def _SwitchScreen(self, screenName: str, isForward: bool) -> None:
+        _direction = "left" if isForward else "right"
+        if hasattr(self._screenManager.transition, "direction"):
+            self._screenManager.transition.direction = _direction
+        self._screenManager.current = screenName
 
     def _SetStatus(self, messageText: str) -> None:
         self._statusLabel.text = messageText
@@ -401,7 +412,7 @@ class ProjectManagerLayout(BoxLayout):
         self._selectedProjectName = projectName
         self._UpdateTitleForGames()
         self._RefreshGames()
-        self._screenManager.current = "games"
+        self._SwitchScreen("games", isForward=True)
 
     def _RefreshGames(self) -> None:
         self._ClearList(self._gameListContainer)
@@ -425,7 +436,7 @@ class ProjectManagerLayout(BoxLayout):
         self._selectedGameName = gameName
         self._UpdateTitleForScenes()
         self._RefreshScenes()
-        self._screenManager.current = "scenes"
+        self._SwitchScreen("scenes", isForward=True)
 
     def _RefreshScenes(self) -> None:
         self._ClearList(self._sceneListContainer)
@@ -447,15 +458,10 @@ class ProjectManagerLayout(BoxLayout):
         if oldName != expectedName:
             raise ProjectManagerError("Project list changed. How to fix: refresh and try again.")
 
-        _oldPath = self._workspaceRoot / oldName
-        _newPath = self._workspaceRoot / newName
-        if _newPath.exists():
-            raise ProjectManagerError(f"Project {newName} already exists. How to fix: choose a different name.")
-
-        _oldPath.rename(_newPath)
+        _result = self._bootstrapService.RenameProjectFolder(oldName, newName)
         if self._selectedProjectName == oldName:
             self._selectedProjectName = newName
-        self._SetStatus(f"Renamed project {oldName} to {newName}.")
+        self._SetStatus(_result)
         self._RefreshProjects()
 
     def _CopyProjectPrompt(self, projectName: str) -> None:

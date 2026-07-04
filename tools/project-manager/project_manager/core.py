@@ -81,6 +81,22 @@ class ProjectManagerService:
     def _SaveJson(self, filePath: Path, dataMap: Dict[str, Any]) -> None:
         filePath.write_text(json.dumps(dataMap, indent=2), encoding="utf-8")
 
+    def _ReplaceWorkspaceProjectPath(self, value: Any, oldProjectName: str, newProjectName: str) -> Any:
+        if isinstance(value, str):
+            _pattern = re.compile(rf"(\$\{{workspaceFolder\}}/){re.escape(oldProjectName)}(?=[/\\]|$)")
+            return _pattern.sub(rf"\1{newProjectName}", value)
+
+        if isinstance(value, list):
+            return [self._ReplaceWorkspaceProjectPath(_item, oldProjectName, newProjectName) for _item in value]
+
+        if isinstance(value, dict):
+            return {
+                _key: self._ReplaceWorkspaceProjectPath(_item, oldProjectName, newProjectName)
+                for _key, _item in value.items()
+            }
+
+        return value
+
     def _ValidateGameName(self, gameName: str) -> None:
         if not re.match(r"^[a-z][a-z0-9_]*$", gameName):
             raise ProjectManagerError(
@@ -677,6 +693,40 @@ class ProjectManagerService:
             f"Renamed project folder to {newProjectName}. "
             "How to finish: reopen the renamed workspace in VS Code."
         )
+
+    def RenameProjectFolder(self, oldProjectName: str, newProjectName: str) -> str:
+        self._ValidateProjectName(oldProjectName)
+        self._ValidateProjectName(newProjectName)
+
+        _oldPath = self._workspaceRoot / oldProjectName
+        _newPath = self._workspaceRoot / newProjectName
+        if not _oldPath.exists():
+            raise ProjectManagerError(
+                f"Project {oldProjectName} does not exist. How to fix: refresh and try again."
+            )
+        if _newPath.exists():
+            raise ProjectManagerError(
+                f"Project {newProjectName} already exists. How to fix: choose a different name."
+            )
+
+        _oldPath.rename(_newPath)
+
+        _settingsPath = self._GetSettingsPath()
+        _settingsMap = self._LoadJson(_settingsPath)
+        _updatedSettings = self._ReplaceWorkspaceProjectPath(_settingsMap, oldProjectName, newProjectName)
+        self._SaveJson(_settingsPath, _updatedSettings)
+
+        _launchPath = self._GetLaunchPath()
+        _launchMap = self._LoadJson(_launchPath)
+        _updatedLaunch = self._ReplaceWorkspaceProjectPath(_launchMap, oldProjectName, newProjectName)
+        self._SaveJson(_launchPath, _updatedLaunch)
+
+        _savedProjectFolder = str(self._config.get("projectFolder", "")).strip()
+        if not _savedProjectFolder or _savedProjectFolder == oldProjectName or self._paths.projectRoot.name == oldProjectName:
+            self._config["projectFolder"] = newProjectName
+            self._SaveConfig(self._config)
+
+        return f"Renamed project {oldProjectName} to {newProjectName}."
 
     def _ReplaceProjectNameInWorkspace(self, oldProjectName: str, newProjectName: str) -> None:
         _allowedSuffixes = {

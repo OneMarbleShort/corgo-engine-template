@@ -30,6 +30,7 @@
 
 # Executables
 *.exe
+!/tools/bin/**/*.exe
 *.out
 *.app
 *.i*86
@@ -51,6 +52,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 /.sentry-native
+**/.sentry-native/
 /3rdParty
 .github/copilot-session.md
 /Testing

@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import shutil
 from dataclasses import dataclass
@@ -163,12 +164,51 @@ class ProjectManagerService:
             )
 
         _content = _scenesHeaderPath.read_text(encoding="utf-8")
-        _scenesArray = re.findall(r"CE_DECLARE_SCENE\((\w+)\)", _content)
+        _contentNoBlockComments = re.sub(r"/\*.*?\*/", "", _content, flags=re.DOTALL)
+        _contentNoComments = re.sub(r"//.*$", "", _contentNoBlockComments, flags=re.MULTILINE)
+        _scenesArray = re.findall(r"CE_DECLARE_SCENE\((\w+)\)", _contentNoComments)
         return _scenesArray
+
+    def GetSceneFilePath(self, gameName: str, sceneName: str) -> Path:
+        self._ValidateGameName(gameName)
+        self._ValidateSceneName(sceneName)
+
+        _scenePath = self._FindSceneFilePath(gameName, sceneName)
+        if _scenePath is None:
+            raise ProjectManagerError(
+                f"Scene file for {sceneName} is missing in game {gameName}. "
+                f"How to fix: add {sceneName.lower()}.c under src/{gameName}/scenes or update scenes.h declarations."
+            )
+        return _scenePath
+
+    def ListMissingSceneFiles(self, gameName: str) -> List[str]:
+        self._ValidateGameName(gameName)
+        _missingArray: List[str] = []
+        for _sceneName in self.ListScenes(gameName):
+            if self._FindSceneFilePath(gameName, _sceneName) is None:
+                _missingArray.append(_sceneName)
+        return _missingArray
 
     def _SaveCurrentGame(self, gameName: str) -> None:
         self._config["currentGame"] = gameName
         self._SaveConfig(self._config)
+
+    def GetConfiguredProjectFolder(self) -> str:
+        return str(self._config.get("projectFolder", "")).strip()
+
+    def SaveConfiguredProjectFolder(self, projectFolderName: str) -> None:
+        self._config["projectFolder"] = projectFolderName
+        self._SaveConfig(self._config)
+
+    def ClearConfiguredProjectFolder(self) -> None:
+        self._config["projectFolder"] = ""
+        self._SaveConfig(self._config)
+
+    def GetConfiguredCurrentGame(self) -> str:
+        return str(self._config.get("currentGame", "")).strip()
+
+    def ClearConfiguredCurrentGame(self) -> None:
+        self._SaveCurrentGame("")
 
     def GetCurrentGame(self) -> str:
         _saved = str(self._config.get("currentGame", "")).strip()
@@ -184,6 +224,76 @@ class ProjectManagerService:
         _currentGame = _gamesArray[0]
         self._SaveCurrentGame(_currentGame)
         return _currentGame
+
+    def GetStartScene(self, gameName: str) -> str:
+        self._ValidateGameName(gameName)
+
+        _headerPath = self._GetScenesHeaderPath(gameName)
+        if not _headerPath.exists():
+            raise ProjectManagerError(
+                f"Missing scenes.h for game {gameName}. How to fix: create {gameName}/scenes.h in src."
+            )
+
+        _headerContent = _headerPath.read_text(encoding="utf-8")
+        _match = re.search(r"#define\s+CE_ENGINE_SET_START_SCENE\s+(\w+)", _headerContent)
+        if _match:
+            return _match.group(1)
+
+        _scenesArray = self.ListScenes(gameName)
+        if not _scenesArray:
+            raise ProjectManagerError(
+                f"Game {gameName} has no scenes. How to fix: add a scene before running."
+            )
+        return _scenesArray[0]
+
+    def GetBuildPresetForGame(self, gameName: str) -> str:
+        self._ValidateGameName(gameName)
+
+        _presetsMap = self._LoadJson(self._GetCMakePresetsPath())
+        _configurePresetName = self.GetConfigurePresetForGame(gameName)
+
+        _buildPresetName = ""
+        for _preset in _presetsMap.get("buildPresets", []):
+            if _preset.get("configurePreset") == _configurePresetName:
+                _buildPresetName = _preset.get("name", "")
+                break
+
+        if not _buildPresetName:
+            raise ProjectManagerError(
+                f"No build preset found for game {gameName}. How to fix: add a build preset for configure preset {_configurePresetName}."
+            )
+        return _buildPresetName
+
+    def GetConfigurePresetForGame(self, gameName: str) -> str:
+        self._ValidateGameName(gameName)
+
+        _presetsMap = self._LoadJson(self._GetCMakePresetsPath())
+        _configurePresetName = ""
+        for _preset in _presetsMap.get("configurePresets", []):
+            _cacheMap = _preset.get("cacheVariables", {})
+            if _cacheMap.get("CE_GAME_NAME") == gameName and "CE_ENGINE_START_SCENE" not in _cacheMap:
+                _configurePresetName = _preset.get("name", "")
+                break
+
+        if not _configurePresetName:
+            raise ProjectManagerError(
+                f"No configure preset found for game {gameName}. How to fix: create a preset with CE_GAME_NAME={gameName}."
+            )
+        return _configurePresetName
+
+    def GetSimulatorPath(self) -> Path:
+        _sdkPath = str(os.environ.get("PLAYDATE_SDK_PATH", "")).strip()
+        if not _sdkPath:
+            raise ProjectManagerError(
+                "PLAYDATE_SDK_PATH is not set. How to fix: set PLAYDATE_SDK_PATH to your Playdate SDK install folder."
+            )
+
+        _simPath = Path(_sdkPath) / "bin" / "PlaydateSimulator.exe"
+        if not _simPath.exists():
+            raise ProjectManagerError(
+                f"Simulator not found at {_simPath}. How to fix: verify PLAYDATE_SDK_PATH points to a valid SDK install."
+            )
+        return _simPath
 
     def _RemoveBuildArtifacts(self, gameName: str) -> None:
         _patterns = [
@@ -463,6 +573,12 @@ class ProjectManagerService:
                 f"Scene {sceneName} does not exist in game {gameName}. How to fix: choose a valid scene from the list."
             )
 
+        if self._FindSceneFilePath(gameName, sceneName) is None:
+            raise ProjectManagerError(
+                f"Scene {sceneName} is declared but its file is missing in game {gameName}. "
+                f"How to fix: add {sceneName.lower()}.c under src/{gameName}/scenes or remove the declaration from scenes.h."
+            )
+
         _headerPath = self._GetScenesHeaderPath(gameName)
         _headerContent = _headerPath.read_text(encoding="utf-8")
         _pattern = re.compile(r"#define\s+CE_ENGINE_SET_START_SCENE\s+\w+")
@@ -486,6 +602,19 @@ class ProjectManagerService:
 
         _headerPath.write_text(_updated, encoding="utf-8")
         return f"Set start scene to {sceneName} for game {gameName}."
+
+    def RemoveSceneDeclaration(self, gameName: str, sceneName: str) -> str:
+        self._ValidateGameName(gameName)
+        self._ValidateSceneName(sceneName)
+
+        _headerPath = self._GetScenesHeaderPath(gameName)
+        if not _headerPath.exists():
+            raise ProjectManagerError(
+                f"Missing scenes.h for game {gameName}. How to fix: create {gameName}/scenes.h in src."
+            )
+
+        self._RemoveSceneDeclarationFromHeader(_headerPath, sceneName)
+        return f"Removed missing scene declaration {sceneName} from game {gameName}."
 
     def CreateEmptyGame(self, newGameName: str) -> str:
         self._ValidateGameName(newGameName)

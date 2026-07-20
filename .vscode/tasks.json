@@ -53,6 +53,32 @@
 			"group": "build"
 		},
 		{
+			"label": "CMake: build corgogame (Debug, close simulator first)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Set-Location '${workspaceFolder}/corgogame'; Get-Process PlaydateSimulator -ErrorAction SilentlyContinue | Stop-Process -Force; cmake --preset corgogame-vs2022-sim; cmake --build --preset build-corgogame-vs2022-sim --config Debug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "CMake: build corgogame2 (Debug, close simulator first)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Set-Location '${workspaceFolder}/corgogame'; Get-Process PlaydateSimulator -ErrorAction SilentlyContinue | Stop-Process -Force; cmake --preset corgogame2-vs2022-sim; cmake --build --preset build-corgogame2-vs2022-sim --config Debug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
 			"label": "Set Up Env Variables",
 			"type": "shell",
 			"command": "powershell",

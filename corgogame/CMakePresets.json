@@ -11,6 +11,9 @@
       "displayName": "VS2022 Simulator",
       "description": "Simulator configure using Visual Studio 2022 generator.",
       "generator": "Visual Studio 17 2022",
+      "cacheVariables": {
+        "CMAKE_GENERATOR_INSTANCE": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools"
+      },
       "binaryDir": "${sourceDir}/build.vs2022",
       "hidden": true
     },

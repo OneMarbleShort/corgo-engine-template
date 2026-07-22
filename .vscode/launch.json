@@ -1,55 +1,55 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Build and Run Simulator (corgogame)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
-            "args": [
-                "${workspaceFolder}/corgogame/corgogame.pdx"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "preLaunchTask": "CMake: build"
-        },
-        {
-            "name": "Run Simulator Without Building (corgogame)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
-            "args": [
-                "${workspaceFolder}/corgogame/corgogame.pdx"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": []
-        },
-        {
-            "name": "Build and Run Simulator (corgogame2)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
-            "args": [
-                "${workspaceFolder}/corgogame/corgogame2.pdx"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "preLaunchTask": "CMake: build"
-        },
-        {
-            "name": "Run Simulator Without Building (corgogame2)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
-            "args": [
-                "${workspaceFolder}/corgogame/corgogame2.pdx"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": []
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Build and Run Simulator (corgogame)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
+      "args": [
+        "${workspaceFolder}/corgogame/corgogame.pdx"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "preLaunchTask": "CMake: build"
+    },
+    {
+      "name": "Run Simulator Without Building (corgogame)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
+      "args": [
+        "${workspaceFolder}/corgogame/corgogame.pdx"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": []
+    },
+    {
+      "name": "Build and Run Simulator (corgogame2)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
+      "args": [
+        "${workspaceFolder}/corgogame/corgogame2.pdx"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "preLaunchTask": "CMake: build"
+    },
+    {
+      "name": "Run Simulator Without Building (corgogame2)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${env:PLAYDATE_SDK_PATH}/bin/PlaydateSimulator.exe",
+      "args": [
+        "${workspaceFolder}/corgogame/corgogame2.pdx"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": []
+    }
+  ]
 }

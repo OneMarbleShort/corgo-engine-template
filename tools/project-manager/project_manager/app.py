@@ -18,8 +18,19 @@ from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 
+from . import __version__
 from .core import ProjectManagerError
 from .core import ProjectManagerService
+from .launcher import LaunchProjectManager
+
+
+def FormatProjectManagerTitle(workspaceRootName: str, selectedProjectName: str = "", selectedGameName: str = "") -> str:
+    _titleParts = [f"CorgoEngine v{__version__}", workspaceRootName]
+    if selectedProjectName:
+        _titleParts.append(selectedProjectName)
+    if selectedGameName:
+        _titleParts.append(selectedGameName)
+    return " - ".join(_titleParts)
 
 
 class InlineRenameInput(TextInput):
@@ -153,9 +164,17 @@ class ProjectManagerLayout(BoxLayout):
         self._BuildUi()
         self._RefreshProjects()
 
+    def _SetTitle(self, selectedProjectName: str = "", selectedGameName: str = "") -> None:
+        _titleText = FormatProjectManagerTitle(self._workspaceRoot.name, selectedProjectName, selectedGameName)
+        self._titleLabel.text = _titleText
+
+        _app = App.get_running_app()
+        if _app is not None:
+            _app.title = _titleText
+
     def _BuildUi(self) -> None:
         self._titleLabel = Label(
-            text="CorgoEngine",
+            text=FormatProjectManagerTitle(self._workspaceRoot.name),
             size_hint_y=None,
             height=dp(40),
             bold=True,
@@ -487,7 +506,14 @@ class ProjectManagerLayout(BoxLayout):
         if _selectedFolder:
             destinationInput.text = _selectedFolder
 
-    def _Confirm(self, titleText: str, bodyText: str, onConfirm: Callable[[], None]) -> None:
+    def _Confirm(
+        self,
+        titleText: str,
+        bodyText: str,
+        onConfirm: Callable[[], None],
+        confirmText: str = "Yes",
+        cancelText: str = "No",
+    ) -> None:
         _content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(8))
         _messageLabel = Label(
             text=bodyText,
@@ -500,8 +526,8 @@ class ProjectManagerLayout(BoxLayout):
         _content.add_widget(_messageLabel)
 
         _buttons = BoxLayout(size_hint_y=None, height=dp(34), spacing=dp(8))
-        _yesButton = Button(text="Yes", background_normal="", background_color=(0.76, 0.27, 0.27, 1))
-        _noButton = Button(text="No", background_normal="", background_color=(0.35, 0.35, 0.35, 1))
+        _yesButton = Button(text=confirmText, background_normal="", background_color=(0.76, 0.27, 0.27, 1))
+        _noButton = Button(text=cancelText, background_normal="", background_color=(0.35, 0.35, 0.35, 1))
         _buttons.add_widget(_yesButton)
         _buttons.add_widget(_noButton)
         _content.add_widget(_buttons)
@@ -518,6 +544,27 @@ class ProjectManagerLayout(BoxLayout):
         _yesButton.bind(on_press=lambda _instance: _Accept())
         _noButton.bind(on_press=lambda _instance: _popup.dismiss())
         _popup.open()
+
+    def _OpenProjectWithFeedback(self, projectName: str, statusText: str) -> None:
+        self._selectedProjectName = projectName
+        self._SetStatus(statusText)
+        self._RefreshProjects()
+        self._OpenGames(projectName)
+
+    def _PromptSwitchWorkspace(self, workspaceRoot: Path) -> None:
+        self._Confirm(
+            "Clone Complete",
+            f"Cloned repo to {workspaceRoot}. Switch to the cloned repo now?",
+            lambda: self._SwitchWorkspace(workspaceRoot),
+            confirmText="Switch",
+            cancelText="Stay Here",
+        )
+
+    def _SwitchWorkspace(self, workspaceRoot: Path) -> None:
+        LaunchProjectManager(workspaceRoot)
+        _app = App.get_running_app()
+        if _app is not None:
+            _app.stop()
 
     def _ListProjectNames(self) -> list[str]:
         _projectsArray = []
@@ -542,7 +589,7 @@ class ProjectManagerLayout(BoxLayout):
         listContainer.clear_widgets()
 
     def _RefreshProjects(self) -> None:
-        self._titleLabel.text = "CorgoEngine"
+        self._SetTitle()
         self._screenManager.current = "projects"
         self._ClearList(self._projectListContainer)
 
@@ -578,10 +625,10 @@ class ProjectManagerLayout(BoxLayout):
         self._UpdateBuildPlanInfo()
 
     def _UpdateTitleForGames(self) -> None:
-        self._titleLabel.text = f"CorgoEngine - {self._selectedProjectName}"
+        self._SetTitle(self._selectedProjectName)
 
     def _UpdateTitleForScenes(self) -> None:
-        self._titleLabel.text = f"CorgoEngine - {self._selectedProjectName} - {self._selectedGameName}"
+        self._SetTitle(self._selectedProjectName, self._selectedGameName)
 
     def _OpenGames(self, projectName: str) -> None:
         self._selectedProjectName = projectName
@@ -739,14 +786,8 @@ class ProjectManagerLayout(BoxLayout):
         )
 
     def _CopyProject(self, projectName: str, newProjectName: str) -> None:
-        _sourcePath = self._workspaceRoot / projectName
-        _targetPath = self._workspaceRoot / newProjectName
-        if _targetPath.exists():
-            raise ProjectManagerError(f"Project {newProjectName} already exists. How to fix: choose another name.")
-
-        shutil.copytree(_sourcePath, _targetPath)
-        self._SetStatus(f"Copied project {projectName} to {newProjectName}.")
-        self._RefreshProjects()
+        _result = self._bootstrapService.CloneProjectFolder(projectName, newProjectName)
+        self._OpenProjectWithFeedback(newProjectName, _result)
 
     def _DeleteProjectPrompt(self, projectName: str) -> None:
         self._Confirm(
@@ -777,28 +818,37 @@ class ProjectManagerLayout(BoxLayout):
         _destinationFolder = Path(destinationFolderText).expanduser()
         _result = self._bootstrapService.CloneProject(_destinationFolder, newProjectName)
         self._SetStatus(_result)
+        self._PromptSwitchWorkspace(_destinationFolder.resolve() / newProjectName)
 
     def _CreateEmptyProject(self, projectName: str) -> None:
-        _projectPath = self._workspaceRoot / projectName
-        if _projectPath.exists():
-            raise ProjectManagerError(f"Project {projectName} already exists. How to fix: choose another name.")
+        _templateProjectName = self._selectedProjectName if self._selectedProjectName else ""
+        _projectNames = self._ListProjectNames()
+        if _templateProjectName not in _projectNames and _projectNames:
+            _templateProjectName = _projectNames[0]
 
-        (_projectPath / "src").mkdir(parents=True, exist_ok=False)
-        (_projectPath / "Source").mkdir(parents=True, exist_ok=True)
+        if not _templateProjectName:
+            _projectPath = self._workspaceRoot / projectName
+            if _projectPath.exists():
+                raise ProjectManagerError(f"Project {projectName} already exists. How to fix: choose another name.")
 
-        (_projectPath / "CMakePresets.json").write_text(
-            json.dumps({"version": 6, "configurePresets": [], "buildPresets": []}, indent=2),
-            encoding="utf-8",
-        )
-        (_projectPath / "CMakeLists.txt").write_text(
-            "cmake_minimum_required(VERSION 3.14)\n"
-            f"project({projectName} C ASM)\n",
-            encoding="utf-8",
-        )
+            (_projectPath / "src").mkdir(parents=True, exist_ok=False)
+            (_projectPath / "Source").mkdir(parents=True, exist_ok=True)
 
-        self._selectedProjectName = projectName
-        self._SetStatus(f"Created empty project {projectName}.")
-        self._RefreshProjects()
+            (_projectPath / "CMakePresets.json").write_text(
+                json.dumps({"version": 6, "configurePresets": [], "buildPresets": []}, indent=2),
+                encoding="utf-8",
+            )
+            (_projectPath / "CMakeLists.txt").write_text(
+                "cmake_minimum_required(VERSION 3.14)\n"
+                f"project({projectName} C ASM)\n",
+                encoding="utf-8",
+            )
+
+            self._OpenProjectWithFeedback(projectName, f"Created empty project {projectName}.")
+            return
+
+        _result = self._bootstrapService.CloneProjectFolder(_templateProjectName, projectName)
+        self._OpenProjectWithFeedback(projectName, _result)
 
     def _OnAddGame(self) -> None:
         self._PromptForName("Add Game", self._CreateEmptyGame, hintText="game name")
@@ -988,7 +1038,7 @@ class ProjectManagerApp(App):
         self._service = service
 
     def build(self):
-        self.title = "CorgoEngine"
+        self.title = FormatProjectManagerTitle(self._service._workspaceRoot.name)
         Window.size = (760, 620)
         Window.clearcolor = (0.11, 0.11, 0.11, 1)
         return ProjectManagerLayout(service=self._service)

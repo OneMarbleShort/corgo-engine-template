@@ -1,6 +1,9 @@
 import ast
 from pathlib import Path
 
+from project_manager import __version__
+from project_manager.app import FormatProjectManagerTitle
+
 
 def _GetAppModuleAst() -> ast.Module:
     _appPath = Path(__file__).resolve().parents[1] / "project_manager" / "app.py"
@@ -81,3 +84,12 @@ def test_clone_workspace_prompt_uses_folder_picker() -> None:
         if isinstance(_node, ast.Call) and isinstance(_node.func, ast.Attribute)
     }
     assert "askdirectory" in _callNames, "Clone workspace folder picker must call askdirectory()."
+
+
+def test_title_includes_version_and_workspace_root() -> None:
+    _titleText = FormatProjectManagerTitle("clone-alpha", "corgogame", "helloworld")
+
+    assert f"v{__version__}" in _titleText
+    assert "clone-alpha" in _titleText
+    assert "corgogame" in _titleText
+    assert "helloworld" in _titleText

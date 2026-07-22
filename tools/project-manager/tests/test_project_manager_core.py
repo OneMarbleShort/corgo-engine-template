@@ -304,3 +304,23 @@ def test_clone_project_copies_workspace_with_new_name(tmp_path: Path) -> None:
     assert "clone-alpha" in _cloneWorkspaceText
     assert "corgo-engine-template" not in _cloneWorkspaceText
     assert (_cloneRoot / "clone-alpha.code-workspace").exists()
+
+
+def test_clone_project_folder_skips_build_outputs(tmp_path: Path) -> None:
+    _workspaceRoot = _CreateFixtureWorkspace(tmp_path)
+    _service = _CreateService(_workspaceRoot)
+
+    _projectRoot = _workspaceRoot / "corgogame"
+    _WriteText(_projectRoot / "build.vs2022.corgogame" / "stale.txt", "stale build")
+    _WriteText(_projectRoot / "corgogame.pdx" / "pdxinfo", "stale pdx")
+    _WriteText(_projectRoot / "Source" / "pdex.dll", "stale binary")
+
+    _result = _service.CloneProjectFolder("corgogame", "copiedproject")
+
+    _cloneRoot = _workspaceRoot / "copiedproject"
+    assert "Cloned project corgogame to copiedproject" in _result
+    assert _cloneRoot.exists()
+    assert not (_cloneRoot / "build.vs2022.corgogame").exists()
+    assert not (_cloneRoot / "corgogame.pdx").exists()
+    assert not (_cloneRoot / "Source" / "pdex.dll").exists()
+    assert (_cloneRoot / "src").exists()

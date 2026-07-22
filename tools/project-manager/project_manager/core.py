@@ -98,6 +98,21 @@ class ProjectManagerService:
 
         return value
 
+    def _ProjectCloneIgnore(self, directoryPath: str, namesArray: List[str]) -> set[str]:
+        _ignoredNames = set(
+            shutil.ignore_patterns(
+                "build*",
+                "*.pdx",
+                "*_DEVICE.pdx",
+                "__pycache__",
+            )(directoryPath, namesArray)
+        )
+
+        if Path(directoryPath).name == "Source" and "pdex.dll" in namesArray:
+            _ignoredNames.add("pdex.dll")
+
+        return _ignoredNames
+
     def _ValidateGameName(self, gameName: str) -> None:
         if not re.match(r"^[a-z][a-z0-9_]*$", gameName):
             raise ProjectManagerError(
@@ -857,6 +872,24 @@ class ProjectManagerService:
 
         return f"Renamed project {oldProjectName} to {newProjectName}."
 
+    def CloneProjectFolder(self, sourceProjectName: str, newProjectName: str) -> str:
+        self._ValidateProjectName(sourceProjectName)
+        self._ValidateProjectName(newProjectName)
+
+        _sourcePath = self._workspaceRoot / sourceProjectName
+        _targetPath = self._workspaceRoot / newProjectName
+        if not _sourcePath.exists():
+            raise ProjectManagerError(
+                f"Project {sourceProjectName} does not exist. How to fix: refresh and choose an existing project."
+            )
+        if _targetPath.exists():
+            raise ProjectManagerError(
+                f"Project {newProjectName} already exists. How to fix: choose a different name."
+            )
+
+        shutil.copytree(_sourcePath, _targetPath, ignore=self._ProjectCloneIgnore)
+        return f"Cloned project {sourceProjectName} to {newProjectName}."
+
     def _ReplaceProjectNameInWorkspace(self, oldProjectName: str, newProjectName: str) -> None:
         _allowedSuffixes = {
             ".md",
@@ -901,15 +934,17 @@ class ProjectManagerService:
                 f"Target folder {_targetPath} already exists. How to fix: choose a different project name."
             )
 
-        _ignorePatterns = shutil.ignore_patterns(
-            ".git",
-            "build*",
-            "*.pdx",
-            "*_DEVICE.pdx",
-            "__pycache__",
-            "tools/bin",
-        )
-        shutil.copytree(self._workspaceRoot, _targetPath, ignore=_ignorePatterns)
+        def _IgnoreWorkspaceClone(directoryPath: str, namesArray: List[str]) -> set[str]:
+            _ignoredNames = self._ProjectCloneIgnore(directoryPath, namesArray)
+            _ignoredNames.update(
+                shutil.ignore_patterns(
+                    ".git",
+                    "tools/bin",
+                )(directoryPath, namesArray)
+            )
+            return _ignoredNames
+
+        shutil.copytree(self._workspaceRoot, _targetPath, ignore=_IgnoreWorkspaceClone)
 
         _oldProjectName = self._workspaceRoot.name
         _cloneConfigPath = _targetPath / "tools" / "project-manager" / "project_manager_config.json"

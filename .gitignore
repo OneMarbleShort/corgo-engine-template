@@ -92,3 +92,8 @@ pip-wheel-metadata/
 .coverage
 .coverage.*
 htmlcov/
+
+# MCP generated workspace artifacts
+**/.vscode/mcp.json
+**/.vscode/mcp.json.backup-*
+**/.mcp-memory/

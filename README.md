@@ -42,6 +42,26 @@ VSCode has a C/C++ debugger and can attach to the simulator, as well as run all 
 
 If you have CmMake tools installed, it should pick up the Presets and show an icon on the left bar. If you cannot see it check .vscode/settings.json and update `cmake.sourceDirectory`.
 
+### Optional: MCP Setup For Copilot Agent Mode
+If you want MCP tools in Copilot Chat Agent mode, an optional helper script is included:
+
+1. Run tools/Install-TimeBoundMCPs.ps1 with your project path.
+2. Open VSCode Command Palette and run MCP: List Servers.
+3. Start/approve the servers you want to use in this workspace.
+
+Example (minimal config only):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\Install-TimeBoundMCPs.ps1 -ProjectPath . -SkipPrerequisiteInstall -SkipSerena -SkipReferenceServers
+```
+
+What this script writes:
+- .vscode/mcp.json in the selected project
+- .vscode/mcp.json.backup-* when updating an existing file
+- .mcp-memory/ when the memory reference server is enabled
+
+These generated MCP files are ignored by git in this template, so they do not get included in commits by default.
+
 ### Device builds
 
 In order to build for the PD device you need a new environment variable: `NMAKE_PATH` pointing to MSbuild nmake.exe

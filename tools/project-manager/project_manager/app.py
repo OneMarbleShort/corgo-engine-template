@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import shutil
 import threading
@@ -163,6 +164,9 @@ class ProjectManagerLayout(BoxLayout):
 
         self._BuildUi()
         self._RefreshProjects()
+
+        if self._ShouldRunPostCloneBootstrap():
+            Clock.schedule_once(lambda _dt: self._StartPostCloneBootstrap(), 0)
 
     def _SetTitle(self, selectedProjectName: str = "", selectedGameName: str = "") -> None:
         _titleText = FormatProjectManagerTitle(self._workspaceRoot.name, selectedProjectName, selectedGameName)
@@ -358,6 +362,86 @@ class ProjectManagerLayout(BoxLayout):
                 Clock.schedule_once(lambda _dt: self._FinishBackgroundAction(), 0)
 
         threading.Thread(target=_RunWorker, daemon=True).start()
+
+    def _ShouldRunPostCloneBootstrap(self) -> bool:
+        return str(os.environ.get("CORGO_POST_CLONE_BOOTSTRAP", "")).strip() == "1"
+
+    def _StartPostCloneBootstrap(self) -> None:
+        self._StartBackgroundAction(self._RunPostCloneBootstrap)
+
+    def _FormatCommandForOutput(self, commandArray: list[str]) -> str:
+        _formattedPartsArray = []
+        for _item in commandArray:
+            _text = str(_item)
+            if " " in _text:
+                _formattedPartsArray.append(f'"{_text}"')
+            else:
+                _formattedPartsArray.append(_text)
+        return " ".join(_formattedPartsArray)
+
+    def _RunCommandWithOutput(self, commandArray: list[str], cwdPath: Path, failureTitle: str) -> None:
+        self._AppendOutputAsync(f"$ {self._FormatCommandForOutput(commandArray)}")
+        _result = subprocess.run(
+            commandArray,
+            cwd=str(cwdPath),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if _result.stdout:
+            self._AppendOutputAsync(_result.stdout)
+        if _result.stderr:
+            self._AppendOutputAsync(_result.stderr)
+
+        if _result.returncode != 0:
+            _summaryLinesArray = (_result.stderr or _result.stdout or failureTitle).strip().splitlines()
+            _summaryText = _summaryLinesArray[-1] if _summaryLinesArray else failureTitle
+            raise ProjectManagerError(
+                f"{failureTitle}: {_summaryText}. How to fix: review output and run the same command in the cloned workspace."
+            )
+
+    def _RunPostCloneBootstrap(self) -> None:
+        try:
+            self._SetStatusAsync("Running post-clone MCP bootstrap...")
+            self._AppendOutputAsync("Post-clone setup: installing MCP config and validating knowledge servers.")
+
+            _workspaceRoot = self._workspaceRoot.resolve()
+            _installerPath = _workspaceRoot / "tools" / "Install-TimeBoundMCPs.ps1"
+            if not _installerPath.exists():
+                raise ProjectManagerError(
+                    f"Missing installer at {_installerPath}. How to fix: ensure clone includes tools/Install-TimeBoundMCPs.ps1."
+                )
+
+            _installCommandArray = [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(_installerPath),
+                "-ProjectPath",
+                str(_workspaceRoot),
+                "-SkipPrerequisiteInstall",
+                "-SkipSerena",
+            ]
+            self._RunCommandWithOutput(_installCommandArray, _workspaceRoot, "MCP installer failed")
+
+            _corgoKnowledgePath = _workspaceRoot / "tools" / "corgo-mcp-knowledge"
+            _playdateKnowledgePath = _workspaceRoot / "tools" / "playdate-mcp"
+            if not _corgoKnowledgePath.exists() or not _playdateKnowledgePath.exists():
+                raise ProjectManagerError(
+                    "Knowledge MCP folders are missing. How to fix: ensure tools/corgo-mcp-knowledge and tools/playdate-mcp exist in the clone."
+                )
+
+            self._RunCommandWithOutput(["npm", "install"], _corgoKnowledgePath, "corgo-mcp-knowledge install failed")
+            self._RunCommandWithOutput(["npm", "run", "self-check"], _corgoKnowledgePath, "corgo-mcp-knowledge self-check failed")
+            self._RunCommandWithOutput(["npm", "install"], _playdateKnowledgePath, "playdate-mcp install failed")
+            self._RunCommandWithOutput(["npm", "run", "self-check"], _playdateKnowledgePath, "playdate-mcp self-check failed")
+
+            self._SetStatusAsync("Post-clone MCP bootstrap complete.")
+        except Exception as _error:
+            self._SetStatusAsync(str(_error))
 
     def _FinishBackgroundAction(self) -> None:
         self._isBusy = False
@@ -561,7 +645,7 @@ class ProjectManagerLayout(BoxLayout):
         )
 
     def _SwitchWorkspace(self, workspaceRoot: Path) -> None:
-        LaunchProjectManager(workspaceRoot)
+        LaunchProjectManager(workspaceRoot, runPostCloneBootstrap=True)
         _app = App.get_running_app()
         if _app is not None:
             _app.stop()

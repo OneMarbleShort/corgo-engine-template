@@ -4,10 +4,17 @@ import sys
 from pathlib import Path
 
 
-def BuildProjectManagerLaunchArguments(workspaceRoot: Path) -> tuple[list[str], str, dict[str, str]]:
+def BuildProjectManagerLaunchArguments(
+    workspaceRoot: Path,
+    runPostCloneBootstrap: bool = False,
+) -> tuple[list[str], str, dict[str, str]]:
     _workspaceRoot = workspaceRoot.resolve()
     _env = os.environ.copy()
     _env["CORGO_WORKSPACE_ROOT"] = str(_workspaceRoot)
+    if runPostCloneBootstrap:
+        _env["CORGO_POST_CLONE_BOOTSTRAP"] = "1"
+    else:
+        _env.pop("CORGO_POST_CLONE_BOOTSTRAP", None)
 
     if getattr(sys, "frozen", False):
         return [str(Path(sys.executable).resolve())], str(_workspaceRoot), _env
@@ -22,6 +29,9 @@ def BuildProjectManagerLaunchArguments(workspaceRoot: Path) -> tuple[list[str], 
     return [sys.executable, str(_scriptPath)], str(_scriptPath.parent), _env
 
 
-def LaunchProjectManager(workspaceRoot: Path) -> None:
-    _commandArray, _cwd, _env = BuildProjectManagerLaunchArguments(workspaceRoot)
+def LaunchProjectManager(workspaceRoot: Path, runPostCloneBootstrap: bool = False) -> None:
+    _commandArray, _cwd, _env = BuildProjectManagerLaunchArguments(
+        workspaceRoot,
+        runPostCloneBootstrap=runPostCloneBootstrap,
+    )
     subprocess.Popen(_commandArray, cwd=_cwd, env=_env)

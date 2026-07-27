@@ -5,6 +5,7 @@ This tool manages Corgo project structure operations from a compact Kivy UI.
 ## Features
 - Rename project references and optionally rename workspace folder
 - Clone the full workspace repo to a new directory with a folder picker, a new repo name, and rewritten workspace/name references
+- After clone and switching to the new repo, auto-run MCP setup and knowledge-server bootstrap in the cloned workspace
 - Add, clone, rename, delete, and switch games
 - Add, clone, rename, and delete scenes
 - Update CMake presets and VS Code launch/settings files when operations change project state

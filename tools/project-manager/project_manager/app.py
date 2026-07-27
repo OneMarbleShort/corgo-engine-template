@@ -383,14 +383,24 @@ class ProjectManagerLayout(BoxLayout):
         return " ".join(_formattedPartsArray)
 
     def _RunCommandWithOutput(self, commandArray: list[str], cwdPath: Path, failureTitle: str) -> None:
-        self._AppendOutputAsync(f"$ {self._FormatCommandForOutput(commandArray)}")
-        _result = subprocess.run(
-            commandArray,
-            cwd=str(cwdPath),
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        _resolvedCommandArray = list(commandArray)
+        _resolvedCommandArray[0] = self._ResolveExecutable(commandArray[0])
+
+        self._AppendOutputAsync(f"$ {self._FormatCommandForOutput(_resolvedCommandArray)}")
+
+        try:
+            _result = subprocess.run(
+                _resolvedCommandArray,
+                cwd=str(cwdPath),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError as _error:
+            raise ProjectManagerError(
+                f"{failureTitle}: command '{commandArray[0]}' was not found. "
+                "How to fix: install the missing tool or add it to PATH, then rerun clone/bootstrap."
+            ) from _error
 
         if _result.stdout:
             self._AppendOutputAsync(_result.stdout)
@@ -403,6 +413,36 @@ class ProjectManagerLayout(BoxLayout):
             raise ProjectManagerError(
                 f"{failureTitle}: {_summaryText}. How to fix: review output and run the same command in the cloned workspace."
             )
+
+    def _ResolveExecutable(self, commandName: str) -> str:
+        _name = commandName.strip()
+        if not _name:
+            return commandName
+
+        if Path(_name).is_absolute() or "\\" in _name or "/" in _name:
+            return _name
+
+        _candidatesArray = [_name]
+
+        if _name.lower() == "powershell":
+            _systemRoot = os.environ.get("SystemRoot", r"C:\\Windows")
+            _candidatesArray = [
+                "powershell.exe",
+                "pwsh.exe",
+                str(Path(_systemRoot) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"),
+            ]
+        elif _name.lower() == "npm":
+            _candidatesArray = ["npm.cmd", "npm.exe", "npm"]
+
+        for _candidate in _candidatesArray:
+            _resolved = shutil.which(_candidate)
+            if _resolved:
+                return _resolved
+
+            if Path(_candidate).is_absolute() and Path(_candidate).exists():
+                return _candidate
+
+        return commandName
 
     def _RunPostCloneBootstrap(self) -> None:
         try:

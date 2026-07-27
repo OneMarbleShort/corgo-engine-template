@@ -68,10 +68,22 @@ def test_clone_workspace_prompts_for_switch() -> None:
     _cloneMethod = next(
         _item for _item in _layoutNode.body if isinstance(_item, ast.FunctionDef) and _item.name == "_CloneWorkspace"
     )
+    _cloneWorkerMethod = next(
+        _item
+        for _item in _layoutNode.body
+        if isinstance(_item, ast.FunctionDef) and _item.name == "_CloneWorkspaceWorker"
+    )
 
-    _callNames = {
+    _cloneCallNames = {
         _node.func.attr
         for _node in ast.walk(_cloneMethod)
         if isinstance(_node, ast.Call) and isinstance(_node.func, ast.Attribute)
     }
-    assert "_PromptSwitchWorkspace" in _callNames
+    _workerCallNames = {
+        _node.func.attr
+        for _node in ast.walk(_cloneWorkerMethod)
+        if isinstance(_node, ast.Call) and isinstance(_node.func, ast.Attribute)
+    }
+
+    assert "_StartBackgroundAction" in _cloneCallNames
+    assert "_PromptSwitchWorkspace" in _workerCallNames

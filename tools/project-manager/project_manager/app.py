@@ -161,6 +161,7 @@ class ProjectManagerLayout(BoxLayout):
         self._buildButton: Optional[Button] = None
         self._runButton: Optional[Button] = None
         self._buildRunButton: Optional[Button] = None
+        self._progressPopup: Optional[Popup] = None
 
         self._BuildUi()
         self._RefreshProjects()
@@ -348,11 +349,13 @@ class ProjectManagerLayout(BoxLayout):
         button.disabled = not isEnabled
         button.opacity = 1.0 if isEnabled else 0.45
 
-    def _StartBackgroundAction(self, worker: Callable[[], None]) -> None:
+    def _StartBackgroundAction(self, worker: Callable[[], None], busyMessageText: str = "") -> None:
         if self._isBusy:
             self._SetStatus("Action already in progress.")
             return
         self._isBusy = True
+        if busyMessageText:
+            self._ShowProgressPopup(busyMessageText)
         self._UpdateActionButtonsState()
 
         def _RunWorker() -> None:
@@ -444,8 +447,37 @@ class ProjectManagerLayout(BoxLayout):
             self._SetStatusAsync(str(_error))
 
     def _FinishBackgroundAction(self) -> None:
+        self._HideProgressPopup()
         self._isBusy = False
         self._UpdateBuildPlanInfo()
+
+    def _ShowProgressPopup(self, messageText: str) -> None:
+        if self._progressPopup is not None:
+            self._progressPopup.dismiss()
+
+        _content = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
+        _messageLabel = Label(
+            text=messageText,
+            color=(0.95, 0.95, 0.95, 1),
+            halign="center",
+            valign="middle",
+        )
+        _messageLabel.bind(size=lambda _instance, _size: setattr(_instance, "text_size", _instance.size))
+        _content.add_widget(_messageLabel)
+
+        self._progressPopup = Popup(
+            title="Working...",
+            content=_content,
+            size_hint=(0.52, 0.24),
+            auto_dismiss=False,
+        )
+        self._progressPopup.open()
+
+    def _HideProgressPopup(self) -> None:
+        if self._progressPopup is None:
+            return
+        self._progressPopup.dismiss()
+        self._progressPopup = None
 
     def _UpdateActionButtonsState(self) -> None:
         _hasGame = bool(self._selectedProjectName and self._selectedGameName)
@@ -899,10 +931,30 @@ class ProjectManagerLayout(BoxLayout):
         self._PromptForCloneWorkspace()
 
     def _CloneWorkspace(self, destinationFolderText: str, newProjectName: str) -> None:
-        _destinationFolder = Path(destinationFolderText).expanduser()
-        _result = self._bootstrapService.CloneProject(_destinationFolder, newProjectName)
-        self._SetStatus(_result)
-        self._PromptSwitchWorkspace(_destinationFolder.resolve() / newProjectName)
+        if self._isBusy:
+            self._SetStatus("Action already in progress.")
+            return
+
+        self._SetStatus("Cloning repository... this may take a moment.")
+        self._AppendOutput("Cloning repository and preparing cloned workspace...")
+        self._StartBackgroundAction(
+            lambda: self._CloneWorkspaceWorker(destinationFolderText, newProjectName),
+            busyMessageText="Cloning repository and preparing project...",
+        )
+
+    def _CloneWorkspaceWorker(self, destinationFolderText: str, newProjectName: str) -> None:
+        try:
+            _destinationFolder = Path(destinationFolderText).expanduser()
+            _result = self._bootstrapService.CloneProject(_destinationFolder, newProjectName)
+            _clonedWorkspaceRoot = _destinationFolder.resolve() / newProjectName
+            self._SetStatusAsync(_result)
+            self._AppendOutputAsync(_result)
+            Clock.schedule_once(
+                lambda _dt: self._PromptSwitchWorkspace(_clonedWorkspaceRoot),
+                0,
+            )
+        except Exception as _error:
+            self._SetStatusAsync(str(_error))
 
     def _CreateEmptyProject(self, projectName: str) -> None:
         _templateProjectName = self._selectedProjectName if self._selectedProjectName else ""

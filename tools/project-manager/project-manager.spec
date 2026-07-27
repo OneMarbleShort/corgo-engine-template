@@ -11,7 +11,10 @@ a = Analysis(
     pathex=[str(_specRoot)],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=[
+        "kivy.core.text.text_layout",
+        "kivy.core.text.text_sdl2",
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

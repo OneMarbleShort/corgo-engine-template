@@ -1,0 +1,16 @@
+{
+  "name": "corgo-mcp-diagnostics",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only MCP diagnostics for Corgo Engine workspaces",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "self-check": "node src/index.mjs --self-check",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  }
+}

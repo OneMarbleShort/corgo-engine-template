@@ -98,6 +98,21 @@
 			"command": "configure",
 			"problemMatcher": [],
 			"detail": "CMake template configure task"
+		},
+		{
+			"label": "MCP: bootstrap knowledge servers",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"Set-Location '${workspaceFolder}'; Set-Location 'tools/corgo-mcp-knowledge'; npm install; npm run self-check; Set-Location '../playdate-mcp'; npm install; npm run self-check"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

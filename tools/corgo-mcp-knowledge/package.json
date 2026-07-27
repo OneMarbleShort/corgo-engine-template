@@ -1,0 +1,16 @@
+{
+  "name": "corgo-mcp-knowledge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Read/query MCP server for the Corgo engine workspace",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "self-check": "node src/index.mjs --self-check",
+    "test": "node src/index.mjs --self-check"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  }
+}

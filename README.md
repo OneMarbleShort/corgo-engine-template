@@ -62,6 +62,16 @@ What this script writes:
 
 These generated MCP files are ignored by git in this template, so they do not get included in commits by default.
 
+The intended MCP split for this template is documented in [tools/mcp-server-plan.md](tools/mcp-server-plan.md). In short: Project Manager handles edits, Corgo MCP handles engine/project queries and examples, and Playdate MCP handles SDK/platform queries and snippets.
+
+How to use them with Copilot Chat Agent mode:
+1. Start the servers from the VS Code MCP panel after running the setup script.
+2. Ask Copilot to use `corgoKnowledge` when you want Corgo engine APIs, repository examples, or placement guidance.
+3. Ask Copilot to use `playdateKnowledge` when you want Playdate SDK API lookups, examples, or integration checks.
+4. Ask Copilot to use `corgoDiagnostics` when you want validation of games, scenes, and presets.
+5. Ask Copilot to use the Project Manager tool when you want an actual rename, clone, add, or delete operation.
+6. For example: "Use corgoKnowledge to find the right engine API and show me examples, then use Project Manager if a file move is needed."
+
 ### Device builds
 
 In order to build for the PD device you need a new environment variable: `NMAKE_PATH` pointing to MSbuild nmake.exe

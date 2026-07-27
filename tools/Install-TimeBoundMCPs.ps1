@@ -8,6 +8,9 @@ and creates or updates .vscode\mcp.json for the selected project.
 
 Configured servers:
 - Serena: semantic code navigation and editing
+- Corgo Knowledge: Corgo engine APIs, examples, and placement guidance
+- Corgo Diagnostics: read-only Corgo game/preset/scene validation
+- Playdate Knowledge: Playdate SDK APIs, examples, and integration guidance
 - Context7: current library/API documentation
 - Filesystem: restricted to the selected project directory
 - Git: repository history, status, diffs, and commits
@@ -114,6 +117,9 @@ if (-not (Test-Path -LiteralPath $resolvedProjectPath)) {
 $resolvedProjectPath = (Resolve-Path -LiteralPath $resolvedProjectPath).Path
 Write-Host "Project: $resolvedProjectPath" -ForegroundColor Green
 
+$nodeAbsolutePathCandidate = Join-Path $env:ProgramFiles "nodejs\node.exe"
+$npxAbsolutePathCandidate = Join-Path $env:ProgramFiles "nodejs\npx.cmd"
+
 $requiredCommands = @()
 
 if (-not $SkipReferenceServers) {
@@ -127,6 +133,8 @@ if (-not $SkipSerena) {
 if ($OpenInVSCode) {
     $requiredCommands += "code"
 }
+
+$requiredCommands += "node"
 
 $requiredCommands = @($requiredCommands | Sort-Object -Unique)
 
@@ -147,7 +155,9 @@ if (-not $SkipPrerequisiteInstall) {
         Refresh-ProcessPath
     }
 
-    if (($requiredCommands -contains "node" -or $requiredCommands -contains "npx") -and (-not (Test-Command node) -or -not (Test-Command npx))) {
+    $hasNodeInShell = (Test-Command node) -or (Test-Path -LiteralPath $nodeAbsolutePathCandidate)
+    $hasNpxInShell = (Test-Command npx) -or (Test-Path -LiteralPath $npxAbsolutePathCandidate)
+    if (($requiredCommands -contains "node" -or $requiredCommands -contains "npx") -and (-not $hasNodeInShell -or -not $hasNpxInShell)) {
         Install-WinGetPackage -Id "OpenJS.NodeJS.LTS" -DisplayName "Node.js LTS"
         Refresh-ProcessPath
     }
@@ -159,6 +169,14 @@ if (-not $SkipPrerequisiteInstall) {
 }
 
 foreach ($requiredCommand in $requiredCommands) {
+    if ($requiredCommand -eq "node" -and -not (Test-Command node) -and (Test-Path -LiteralPath $nodeAbsolutePathCandidate)) {
+        continue
+    }
+
+    if ($requiredCommand -eq "npx" -and -not (Test-Command npx) -and (Test-Path -LiteralPath $npxAbsolutePathCandidate)) {
+        continue
+    }
+
     if (-not (Test-Command $requiredCommand)) {
         throw "'$requiredCommand' was not found on PATH. Open a new PowerShell window and rerun the script."
     }
@@ -191,6 +209,21 @@ if (-not $SkipSerena) {
     }
 }
 
+$workspaceFolderVar = '${workspaceFolder:}'
+$serenaCommand = "serena"
+$serenaAbsolutePath = Join-Path $env:USERPROFILE ".local\bin\serena.exe"
+if (Test-Path -LiteralPath $serenaAbsolutePath) {
+    $serenaCommand = $serenaAbsolutePath
+}
+
+$corgoDiagnosticsCommand = "node"
+if (Test-Path -LiteralPath $nodeAbsolutePathCandidate) {
+    $corgoDiagnosticsCommand = $nodeAbsolutePathCandidate
+}
+
+$corgoKnowledgeCommand = $corgoDiagnosticsCommand
+$playdateKnowledgeCommand = $corgoDiagnosticsCommand
+
 $vscodeDirectory = Join-Path $resolvedProjectPath ".vscode"
 $mcpPath = Join-Path $vscodeDirectory "mcp.json"
 New-Item -ItemType Directory -Path $vscodeDirectory -Force | Out-Null
@@ -222,12 +255,12 @@ $servers = $config["servers"]
 if (-not $SkipSerena) {
     $servers["serena"] = [ordered]@{
         type = "stdio"
-        command = "serena"
+        command = $serenaCommand
         args = @(
             "start-mcp-server",
             "--context=vscode",
             "--project",
-            '${workspaceFolder}'
+            $workspaceFolderVar
         )
     }
 }
@@ -242,6 +275,30 @@ $servers["microsoftLearn"] = [ordered]@{
     url = "https://learn.microsoft.com/api/mcp"
 }
 
+$servers["corgoDiagnostics"] = [ordered]@{
+    type = "stdio"
+    command = $corgoDiagnosticsCommand
+    args = @(
+        "$workspaceFolderVar\\tools\\corgo-mcp-diagnostics\\src\\index.mjs"
+    )
+}
+
+$servers["corgoKnowledge"] = [ordered]@{
+    type = "stdio"
+    command = $corgoKnowledgeCommand
+    args = @(
+        "$workspaceFolderVar\\tools\\corgo-mcp-knowledge\\src\\index.mjs"
+    )
+}
+
+$servers["playdateKnowledge"] = [ordered]@{
+    type = "stdio"
+    command = $playdateKnowledgeCommand
+    args = @(
+        "$workspaceFolderVar\\tools\\playdate-mcp\\src\\index.mjs"
+    )
+}
+
 if (-not $SkipReferenceServers) {
     $servers["filesystem"] = [ordered]@{
         type = "stdio"
@@ -249,7 +306,7 @@ if (-not $SkipReferenceServers) {
         args = @(
             "-y",
             "@modelcontextprotocol/server-filesystem@latest",
-            '${workspaceFolder}'
+            $workspaceFolderVar
         )
     }
 
@@ -259,7 +316,7 @@ if (-not $SkipReferenceServers) {
         args = @(
             "mcp-server-git",
             "--repository",
-            '${workspaceFolder}'
+            $workspaceFolderVar
         )
     }
 
@@ -274,7 +331,7 @@ if (-not $SkipReferenceServers) {
             "@modelcontextprotocol/server-memory@latest"
         )
         env = [ordered]@{
-            MEMORY_FILE_PATH = '${workspaceFolder}\.mcp-memory\memory.json'
+            MEMORY_FILE_PATH = "$workspaceFolderVar\\.mcp-memory\\memory.json"
         }
     }
 }
@@ -292,10 +349,20 @@ Write-Host $mcpPath -ForegroundColor Green
 
 Write-Step "Validating installed commands"
 if ($requiredCommands -contains "node") {
-    & node --version
+    if (Test-Command node) {
+        & node --version
+    }
+    elseif (Test-Path -LiteralPath $nodeAbsolutePathCandidate) {
+        & $nodeAbsolutePathCandidate --version
+    }
 }
 if ($requiredCommands -contains "npx") {
-    & npx --version
+    if (Test-Command npx) {
+        & npx --version
+    }
+    elseif (Test-Path -LiteralPath $npxAbsolutePathCandidate) {
+        & $npxAbsolutePathCandidate --version
+    }
 }
 if ($requiredCommands -contains "git") {
     & git --version
@@ -318,12 +385,15 @@ Next steps:
 4. Start each server and approve the workspace trust prompts.
 5. In Copilot Chat, switch to Agent mode and open the Tools menu.
 6. Ask: 'Use Serena to activate and inspect this project.'
+7. Use 'corgoKnowledge' for engine APIs, examples, and placement guidance.
+8. Use 'playdateKnowledge' for Playdate API lookups, examples, and integration checks.
 
 Notes:
 - Filesystem access is restricted to this workspace.
 - Existing .vscode\mcp.json content was preserved where possible.
 - Context7 works without an API key, but its free authenticated setup can provide higher limits.
 - The official filesystem, git, and memory servers are reference implementations; review permissions before allowing write operations.
+- The Corgo and Playdate knowledge servers are read-only; use Project Manager for actual creation and modification.
 "@ -ForegroundColor White
 
 if ($OpenInVSCode) {

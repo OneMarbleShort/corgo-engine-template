@@ -97,3 +97,7 @@ htmlcov/
 **/.vscode/mcp.json
 **/.vscode/mcp.json.backup-*
 **/.mcp-memory/
+
+# Local MCP/tool runtime artifacts
+/.serena/
+**/node_modules/

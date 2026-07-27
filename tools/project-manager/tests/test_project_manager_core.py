@@ -252,6 +252,37 @@ def test_delete_scene_removes_files_and_related_scene_preset(tmp_path: Path) -> 
     assert "HelloCorgo" not in _presetsText
 
 
+def test_delete_scene_removes_linked_build_preset_even_when_name_is_generic(tmp_path: Path) -> None:
+    _workspaceRoot = _CreateFixtureWorkspace(tmp_path)
+    _presetsPath = _workspaceRoot / "corgogame" / "CMakePresets.json"
+    _presetsMap = json.loads(_presetsPath.read_text(encoding="utf-8"))
+    _presetsMap["buildPresets"].append(
+        {
+            "name": "build-generic-scene-profile",
+            "configurePreset": "corgogame-vs2022-sim-hellocorgo",
+            "displayName": "Build generic scene profile",
+        }
+    )
+    _presetsPath.write_text(json.dumps(_presetsMap, indent=2), encoding="utf-8")
+
+    _service = _CreateService(_workspaceRoot)
+    _service.DeleteScene("corgogame", "HelloCorgo")
+
+    _updatedPresets = json.loads(_presetsPath.read_text(encoding="utf-8"))
+    assert all(_preset.get("name") != "build-generic-scene-profile" for _preset in _updatedPresets["buildPresets"])
+
+
+def test_delete_last_scene_clears_start_scene_define(tmp_path: Path) -> None:
+    _workspaceRoot = _CreateFixtureWorkspace(tmp_path)
+    _service = _CreateService(_workspaceRoot)
+
+    _service.DeleteScene("corgogame", "HelloCorgoS2")
+    _service.DeleteScene("corgogame", "HelloCorgo")
+
+    _headerText = (_workspaceRoot / "corgogame" / "src" / "corgogame" / "scenes.h").read_text(encoding="utf-8")
+    assert "CE_ENGINE_SET_START_SCENE" not in _headerText
+
+
 def test_rename_project_updates_references_without_folder_move(tmp_path: Path) -> None:
     _workspaceRoot = _CreateFixtureWorkspace(tmp_path)
     _service = _CreateService(_workspaceRoot)

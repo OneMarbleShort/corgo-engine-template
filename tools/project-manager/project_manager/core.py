@@ -743,6 +743,12 @@ class ProjectManagerService:
 
         _headerContent = _headerPath.read_text(encoding="utf-8")
         _startScenePattern = re.compile(r"#define\s+CE_ENGINE_SET_START_SCENE\s+(\w+)")
+        _startSceneGuardBlockPattern = re.compile(
+            r"\n#ifndef\s+CE_ENGINE_SET_START_SCENE\s*\n"
+            r"#define\s+CE_ENGINE_SET_START_SCENE\s+\w+\s*\n"
+            r"#endif\s*\n?",
+            flags=re.MULTILINE,
+        )
         _startSceneMatch = _startScenePattern.search(_headerContent)
         if _startSceneMatch and _startSceneMatch.group(1) == sceneName:
             _remainingScenes = self.ListScenes(gameName)
@@ -750,27 +756,44 @@ class ProjectManagerService:
                 _headerContent = _startScenePattern.sub(
                     f"#define CE_ENGINE_SET_START_SCENE {_remainingScenes[0]}", _headerContent
                 )
-                _headerPath.write_text(_headerContent, encoding="utf-8")
+            else:
+                _headerContent = _startSceneGuardBlockPattern.sub("\n", _headerContent)
+            _headerPath.write_text(_headerContent, encoding="utf-8")
 
         _presetsPath = self._GetCMakePresetsPath()
         _presetsMap = self._LoadJson(_presetsPath)
+        _removedConfigurePresetNames = set()
+        _removedConfigureCount = 0
         _filteredConfigureArray = []
         for _preset in _presetsMap.get("configurePresets", []):
             _cacheMap = _preset.get("cacheVariables", {})
             if _cacheMap.get("CE_GAME_NAME") == gameName and _cacheMap.get("CE_ENGINE_START_SCENE") == sceneName:
+                _removedConfigurePresetName = str(_preset.get("name", "")).strip()
+                if _removedConfigurePresetName:
+                    _removedConfigurePresetNames.add(_removedConfigurePresetName)
+                _removedConfigureCount += 1
                 continue
             _filteredConfigureArray.append(_preset)
         _presetsMap["configurePresets"] = _filteredConfigureArray
 
+        _removedBuildCount = 0
         _filteredBuildArray = []
         for _preset in _presetsMap.get("buildPresets", []):
-            if sceneName.lower() in str(_preset.get("name", "")) and gameName in str(_preset):
+            _configurePresetName = str(_preset.get("configurePreset", "")).strip()
+            _buildPresetText = json.dumps(_preset)
+            _isLinkedToRemovedConfigure = _configurePresetName in _removedConfigurePresetNames
+            _looksLikeDeletedScenePreset = sceneName.lower() in str(_preset.get("name", "")) and gameName in _buildPresetText
+            if _isLinkedToRemovedConfigure or _looksLikeDeletedScenePreset:
+                _removedBuildCount += 1
                 continue
             _filteredBuildArray.append(_preset)
         _presetsMap["buildPresets"] = _filteredBuildArray
 
         self._SaveJson(_presetsPath, _presetsMap)
-        return f"Deleted scene {sceneName} from game {gameName}."
+        return (
+            f"Deleted scene {sceneName} from game {gameName}. "
+            f"Removed {_removedConfigureCount} configure preset(s) and {_removedBuildCount} build preset(s)."
+        )
 
     def SwitchGame(self, gameName: str) -> str:
         self._ValidateGameName(gameName)

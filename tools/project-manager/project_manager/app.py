@@ -74,6 +74,9 @@ class InlineRenameInput(TextInput):
         self.focus = True
         self.select_all()
 
+    def BeginRename(self) -> None:
+        Clock.schedule_once(self._BeginRename, 0)
+
     def _OnTextValidate(self, _instance):
         self._CommitRename()
 
@@ -128,6 +131,13 @@ class ItemRow(BoxLayout):
             background_color=(0.35, 0.35, 0.35, 1),
             color=(1, 1, 1, 1),
         )
+        self._renameButton = Button(
+            text="Rename",
+            size_hint_x=0.16,
+            background_normal="",
+            background_color=(0.52, 0.42, 0.2, 1),
+            color=(1, 1, 1, 1),
+        )
         self._deleteButton = Button(
             text="X",
             size_hint_x=0.1,
@@ -138,10 +148,12 @@ class ItemRow(BoxLayout):
 
         self._playButton.bind(on_press=lambda _instance: onPlay())
         self._copyButton.bind(on_press=lambda _instance: onCopy())
+        self._renameButton.bind(on_press=lambda _instance: self._nameInput.BeginRename())
         self._deleteButton.bind(on_press=lambda _instance: onDelete())
 
         self.add_widget(self._playButton)
         self.add_widget(self._copyButton)
+        self.add_widget(self._renameButton)
         self.add_widget(self._deleteButton)
 
 

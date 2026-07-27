@@ -38,6 +38,7 @@ def test_build_launch_arguments_reuses_current_exe_when_frozen(tmp_path: Path, m
     assert _commandArray == [str((tmp_path / "tools" / "bin" / "project-manager.exe").resolve())]
     assert _cwd == str(_workspaceRoot.resolve())
     assert _env["CORGO_WORKSPACE_ROOT"] == str(_workspaceRoot.resolve())
+    assert _env["PYINSTALLER_RESET_ENVIRONMENT"] == "1"
 
 
 def test_build_launch_arguments_sets_post_clone_bootstrap_env(tmp_path: Path, monkeypatch) -> None:

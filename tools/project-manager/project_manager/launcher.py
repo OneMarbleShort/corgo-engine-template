@@ -17,6 +17,13 @@ def BuildProjectManagerLaunchArguments(
         _env.pop("CORGO_POST_CLONE_BOOTSTRAP", None)
 
     if getattr(sys, "frozen", False):
+        # Relaunching a one-file PyInstaller app from itself must reset the
+        # inherited bootloader environment so the child extracts a fresh temp
+        # runtime instead of reusing parent extraction paths.
+        for _key in list(_env.keys()):
+            if _key.startswith("_PYI") or _key == "_MEIPASS2":
+                _env.pop(_key, None)
+        _env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
         return [str(Path(sys.executable).resolve())], str(_workspaceRoot), _env
 
     _scriptPath = _workspaceRoot / "tools" / "project-manager" / "run_project_manager.py"

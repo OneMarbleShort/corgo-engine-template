@@ -283,6 +283,49 @@ def test_delete_last_scene_clears_start_scene_define(tmp_path: Path) -> None:
     assert "CE_ENGINE_SET_START_SCENE" not in _headerText
 
 
+def test_list_scenes_is_derived_from_scene_files(tmp_path: Path) -> None:
+    _workspaceRoot = _CreateFixtureWorkspace(tmp_path)
+    _service = _CreateService(_workspaceRoot)
+
+    _headerPath = _workspaceRoot / "corgogame" / "src" / "corgogame" / "scenes.h"
+    _headerText = _headerPath.read_text(encoding="utf-8")
+    _headerPath.write_text(_headerText.replace("CE_DECLARE_SCENE(HelloCorgoS2)\n", ""), encoding="utf-8")
+
+    _sceneText = _CreateSceneFile("BonusScene")
+    (_workspaceRoot / "corgogame" / "src" / "corgogame" / "scenes" / "bonusscene.c").write_text(
+        _sceneText,
+        encoding="utf-8",
+    )
+
+    _scenes = _service.ListScenes("corgogame")
+    assert "BonusScene" in _scenes
+    assert "HelloCorgoS2" in _scenes
+
+
+def test_sync_scene_header_to_files_reconciles_mismatch(tmp_path: Path) -> None:
+    _workspaceRoot = _CreateFixtureWorkspace(tmp_path)
+    _service = _CreateService(_workspaceRoot)
+
+    _headerPath = _workspaceRoot / "corgogame" / "src" / "corgogame" / "scenes.h"
+    _headerText = _headerPath.read_text(encoding="utf-8")
+    _headerText = _headerText.replace("CE_DECLARE_SCENE(HelloCorgoS2)\n", "")
+    _headerText = _headerText.replace(
+        "CE_DECLARE_SCENE(HelloCorgo)\n",
+        "CE_DECLARE_SCENE(HelloCorgo)\nCE_DECLARE_SCENE(GhostScene)\n",
+    )
+    _headerPath.write_text(_headerText, encoding="utf-8")
+
+    _mismatch = _service.GetSceneHeaderFileMismatch("corgogame")
+    assert "GhostScene" in _mismatch["headerOnly"]
+    assert "HelloCorgoS2" in _mismatch["filesOnly"]
+
+    _result = _service.SyncSceneHeaderToFiles("corgogame")
+    _headerTextAfter = _headerPath.read_text(encoding="utf-8")
+    assert "Updated scene header" in _result
+    assert "CE_DECLARE_SCENE(GhostScene)" not in _headerTextAfter
+    assert "CE_DECLARE_SCENE(HelloCorgoS2)" in _headerTextAfter
+
+
 def test_rename_project_updates_references_without_folder_move(tmp_path: Path) -> None:
     _workspaceRoot = _CreateFixtureWorkspace(tmp_path)
     _service = _CreateService(_workspaceRoot)

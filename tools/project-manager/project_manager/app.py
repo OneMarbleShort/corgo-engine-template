@@ -867,25 +867,32 @@ class ProjectManagerLayout(BoxLayout):
             )
             self._sceneListContainer.add_widget(_row)
 
-        _missingScenesArray = _service.ListMissingSceneFiles(self._selectedGameName)
-        if _missingScenesArray:
-            _missingText = ", ".join(_missingScenesArray)
+        _mismatchMap = _service.GetSceneHeaderFileMismatch(self._selectedGameName)
+        _headerOnlyArray = _mismatchMap.get("headerOnly", [])
+        _filesOnlyArray = _mismatchMap.get("filesOnly", [])
+        if _headerOnlyArray or _filesOnlyArray:
+            _headerOnlyText = ", ".join(_headerOnlyArray) if _headerOnlyArray else "none"
+            _filesOnlyText = ", ".join(_filesOnlyArray) if _filesOnlyArray else "none"
             self._SetStatus(
-                f"Warning: scenes declared but missing files in {self._selectedGameName}: {_missingText}."
+                f"Warning: scenes.h and scene files are out of sync in {self._selectedGameName}."
             )
 
-            _missingKey = (
-                f"{self._selectedProjectName}|{self._selectedGameName}|{','.join(_missingScenesArray)}"
+            _mismatchKey = (
+                f"{self._selectedProjectName}|{self._selectedGameName}|"
+                f"{','.join(_headerOnlyArray)}|{','.join(_filesOnlyArray)}"
             )
-            if _missingKey != self._missingScenesPromptKey:
-                self._missingScenesPromptKey = _missingKey
+            if _mismatchKey != self._missingScenesPromptKey:
+                self._missingScenesPromptKey = _mismatchKey
                 self._Confirm(
-                    "Missing Scenes",
+                    "Scene Mismatch",
                     (
-                        f"These scenes are declared but missing files: {_missingText}. "
-                        "Remove missing declarations from scenes.h?"
+                        f"Header-only scenes: {_headerOnlyText}\n"
+                        f"File-only scenes: {_filesOnlyText}\n\n"
+                        "Would you like to correct scenes.h to match the scene files now?"
                     ),
-                    lambda _missing=list(_missingScenesArray): self._RemoveMissingSceneDeclarations(_missing),
+                    self._FixSceneHeaderMismatch,
+                    confirmText="Fix",
+                    cancelText="Keep As-Is",
                 )
         else:
             self._missingScenesPromptKey = ""
@@ -912,6 +919,13 @@ class ProjectManagerLayout(BoxLayout):
         self._SetStatus(
             f"Removed {len(missingScenesArray)} missing scene declaration(s) from {self._selectedGameName}."
         )
+        self._missingScenesPromptKey = ""
+        self._RefreshScenes()
+
+    def _FixSceneHeaderMismatch(self) -> None:
+        _service = self._ServiceForProject(self._selectedProjectName)
+        _result = _service.SyncSceneHeaderToFiles(self._selectedGameName)
+        self._SetStatus(_result)
         self._missingScenesPromptKey = ""
         self._RefreshScenes()
 

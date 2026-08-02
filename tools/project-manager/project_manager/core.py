@@ -170,8 +170,7 @@ class ProjectManagerService:
     def _GetScenesFolderPath(self, gameName: str) -> Path:
         return self._paths.srcRoot / gameName / "scenes"
 
-    def ListScenes(self, gameName: str) -> List[str]:
-        self._ValidateGameName(gameName)
+    def _ListScenesFromHeader(self, gameName: str) -> List[str]:
         _scenesHeaderPath = self._GetScenesHeaderPath(gameName)
         if not _scenesHeaderPath.exists():
             raise ProjectManagerError(
@@ -181,8 +180,37 @@ class ProjectManagerService:
         _content = _scenesHeaderPath.read_text(encoding="utf-8")
         _contentNoBlockComments = re.sub(r"/\*.*?\*/", "", _content, flags=re.DOTALL)
         _contentNoComments = re.sub(r"//.*$", "", _contentNoBlockComments, flags=re.MULTILINE)
-        _scenesArray = re.findall(r"CE_DECLARE_SCENE\((\w+)\)", _contentNoComments)
-        return _scenesArray
+        return re.findall(r"CE_DECLARE_SCENE\((\w+)\)", _contentNoComments)
+
+    def _GetSceneNameFromFile(self, sceneFilePath: Path) -> str:
+        _content = sceneFilePath.read_text(encoding="utf-8")
+        _match = re.search(r"CE_DECLARE_SCENE_CREATE_FUNCTION\((\w+)\)", _content)
+        if _match:
+            return _match.group(1)
+
+        _stem = sceneFilePath.stem
+        _pascal = "".join(_piece.capitalize() for _piece in re.split(r"[_\-\s]+", _stem) if _piece)
+        if _pascal and re.match(r"^[A-Z][A-Za-z0-9_]*$", _pascal):
+            return _pascal
+        return _stem
+
+    def _ListScenesFromFiles(self, gameName: str) -> List[str]:
+        _sceneFolderPath = self._GetScenesFolderPath(gameName)
+        if not _sceneFolderPath.exists():
+            raise ProjectManagerError(
+                f"Missing scenes folder for game {gameName}. How to fix: create src/{gameName}/scenes and add scene .c files."
+            )
+
+        _sceneNamesArray = []
+        for _path in sorted(_sceneFolderPath.glob("*.c"), key=lambda _item: _item.name.lower()):
+            _sceneName = self._GetSceneNameFromFile(_path)
+            if _sceneName not in _sceneNamesArray:
+                _sceneNamesArray.append(_sceneName)
+        return _sceneNamesArray
+
+    def ListScenes(self, gameName: str) -> List[str]:
+        self._ValidateGameName(gameName)
+        return self._ListScenesFromFiles(gameName)
 
     def GetSceneFilePath(self, gameName: str, sceneName: str) -> Path:
         self._ValidateGameName(gameName)
@@ -199,10 +227,63 @@ class ProjectManagerService:
     def ListMissingSceneFiles(self, gameName: str) -> List[str]:
         self._ValidateGameName(gameName)
         _missingArray: List[str] = []
-        for _sceneName in self.ListScenes(gameName):
+        for _sceneName in self._ListScenesFromHeader(gameName):
             if self._FindSceneFilePath(gameName, _sceneName) is None:
                 _missingArray.append(_sceneName)
         return _missingArray
+
+    def GetSceneHeaderFileMismatch(self, gameName: str) -> Dict[str, List[str]]:
+        self._ValidateGameName(gameName)
+        _headerScenes = self._ListScenesFromHeader(gameName)
+        _fileScenes = self._ListScenesFromFiles(gameName)
+
+        _headerOnly = sorted(_scene for _scene in _headerScenes if _scene not in _fileScenes)
+        _filesOnly = sorted(_scene for _scene in _fileScenes if _scene not in _headerScenes)
+        return {
+            "headerOnly": _headerOnly,
+            "filesOnly": _filesOnly,
+        }
+
+    def SyncSceneHeaderToFiles(self, gameName: str) -> str:
+        self._ValidateGameName(gameName)
+
+        _mismatch = self.GetSceneHeaderFileMismatch(gameName)
+        _headerOnly = _mismatch["headerOnly"]
+        _filesOnly = _mismatch["filesOnly"]
+
+        _headerPath = self._GetScenesHeaderPath(gameName)
+        for _sceneName in _headerOnly:
+            self._RemoveSceneDeclarationFromHeader(_headerPath, _sceneName)
+        for _sceneName in _filesOnly:
+            self._AddSceneDeclarationToHeader(_headerPath, _sceneName)
+
+        _headerContent = _headerPath.read_text(encoding="utf-8")
+        _startScenePattern = re.compile(r"#define\s+CE_ENGINE_SET_START_SCENE\s+(\w+)")
+        _startSceneGuardBlockPattern = re.compile(
+            r"\n#ifndef\s+CE_ENGINE_SET_START_SCENE\s*\n"
+            r"#define\s+CE_ENGINE_SET_START_SCENE\s+\w+\s*\n"
+            r"#endif\s*\n?",
+            flags=re.MULTILINE,
+        )
+        _startSceneMatch = _startScenePattern.search(_headerContent)
+        _fileScenes = self._ListScenesFromFiles(gameName)
+
+        if _fileScenes:
+            if _startSceneMatch:
+                if _startSceneMatch.group(1) not in _fileScenes:
+                    self.SetStartScene(gameName, _fileScenes[0])
+            else:
+                self.SetStartScene(gameName, _fileScenes[0])
+        elif _startSceneMatch:
+            _headerContent = _startSceneGuardBlockPattern.sub("\n", _headerContent)
+            _headerPath.write_text(_headerContent, encoding="utf-8")
+
+        if not _headerOnly and not _filesOnly:
+            return f"Scene header already matches scene files for game {gameName}."
+        return (
+            f"Updated scene header for game {gameName}. "
+            f"Removed {len(_headerOnly)} stale declaration(s) and added {len(_filesOnly)} missing declaration(s)."
+        )
 
     def _SaveCurrentGame(self, gameName: str) -> None:
         self._config["currentGame"] = gameName
